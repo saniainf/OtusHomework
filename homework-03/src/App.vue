@@ -2,26 +2,42 @@
   <h1>Homework-03</h1>
   <section class="products-wrapper">
     <div v-for="product in visibleProducts" :key="product.id">
-      <ProductCard :product="product" />
+      <ProductCard :product="product" @open-modal="openModal" />
     </div>
     <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
   </section>
+
+  <Modal :is-modal-open="isModalOpen" :product="selectedProduct" @close="closeModal" />
 </template>
 
 <script setup>
-import { loadProducts } from './utils/utils.js';
-import { onMounted, ref, computed, shallowReactive } from 'vue';
+import { loadProducts, loadProduct } from './utils/utils.js';
+import { onMounted, ref, computed } from 'vue';
 import ProductCard from './components/ProductCard.vue';
+import Modal from './components/Modal.vue';
 
-const STEP = 5;
+const STEP = 3;
 
 let products = [];
 const visibleCount = ref(0);
 const visibleProducts = computed(() => products.slice(0, visibleCount.value));
 const canShowMore = computed(() => visibleCount.value < products.length);
 
+const isModalOpen = ref(false);
+const selectedProduct = ref(null);
+
 function showMore() {
   visibleCount.value = Math.min(visibleCount.value + STEP, products.length);
+}
+
+async function openModal(productId) {
+  selectedProduct.value = await loadProduct(productId);
+  isModalOpen.value = true;
+}
+
+function closeModal() {
+  isModalOpen.value = false;
+  selectedProduct.value = null;
 }
 
 onMounted(async () => {
@@ -50,6 +66,7 @@ h1 {
 
 .show-more-btn {
   padding: 1rem;
+  font-size: 1rem;
   background-color: #42b983;
   color: #fff;
   border: none;

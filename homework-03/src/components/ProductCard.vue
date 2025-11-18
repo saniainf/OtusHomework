@@ -5,8 +5,7 @@
     </div>
     <div class="product-info">
       <span class="product-category">{{ product.category }}</span>
-      <h2 class="product-title">{{ product.title }}</h2>
-      <!-- <p class="product-description">{{ product.description }}</p> -->
+      <h2 class="product-title" @click="openModal">{{ product.title }}</h2>
       <div class="product-rating">
         <span class="rating-stars" v-html="stars"></span>
         <span class="rating-info">
@@ -34,8 +33,13 @@ const props = defineProps({
     }
   }
 });
-
 const product = computed(() => props.product);
+
+const emit = defineEmits(['openModal']);
+
+function openModal() {
+  emit('openModal', product.value.id);
+}
 
 const ratingText = computed(() => {
   return `${product.value.rating.rate} (${product.value.rating.count} отзывов)`;
@@ -88,10 +92,10 @@ const stars = computed(() => toStarsHTML(Math.round(product.value.rating.rate), 
   text-transform: uppercase;
   color: #42b983;
   background-color: #e8f5ef;
-  padding: 0.25rem 0.75rem;
+  padding: 0.3rem 0.7rem;
   border-radius: 4px;
   font-weight: 600;
-  margin-bottom: 0.75rem;
+  margin-bottom: 0.7rem;
 }
 
 .product-title {
@@ -99,6 +103,17 @@ const stars = computed(() => toStarsHTML(Math.round(product.value.rating.rate), 
   font-weight: 600;
   color: #2c3e50;
   margin: 0.75rem 0;
+  cursor: pointer;
+}
+
+.product-title:hover {
+  color: #42b983;
+}
+
+.product-title:focus {
+  outline: 2px solid #42b983;
+  outline-offset: 2px;
+  border-radius: 4px;
 }
 
 .product-description {
@@ -121,7 +136,7 @@ const stars = computed(() => toStarsHTML(Math.round(product.value.rating.rate), 
   gap: 2px;
 }
 
-.rating-stars::v-deep .star {
+:deep(.rating-stars) .star {
   color: #ffc107;
   font-size: 1.1rem;
 }
