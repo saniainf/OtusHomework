@@ -1,23 +1,34 @@
 <template>
   <h1>Homework-03</h1>
   <section class="products-wrapper">
-    <div v-for="product in products" :key="product.id" class="products-item">
+    <div v-for="product in visibleProducts" :key="product.id">
       <ProductCard :product="product" />
     </div>
+    <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
   </section>
 </template>
 
 <script setup>
 import { loadProducts } from './utils/utils.js';
-import { onMounted, reactive } from 'vue';
+import { onMounted, ref, computed, shallowReactive } from 'vue';
 import ProductCard from './components/ProductCard.vue';
 
-const products = reactive([]);
+const STEP = 5;
+
+let products = [];
+const visibleCount = ref(0);
+const visibleProducts = computed(() => products.slice(0, visibleCount.value));
+const canShowMore = computed(() => visibleCount.value < products.length);
+
+function showMore() {
+  visibleCount.value = Math.min(visibleCount.value + STEP, products.length);
+}
 
 onMounted(async () => {
-  const loadedProducts = await loadProducts();
-  products.splice(0, products.length, ...loadedProducts);
+  products = await loadProducts();
+  visibleCount.value = STEP;
 });
+
 </script>
 
 <style scoped>
@@ -37,27 +48,17 @@ h1 {
   gap: 1.5rem;
 }
 
-.products-list {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-  gap: 1.5rem;
+.show-more-btn {
+  padding: 1rem;
+  background-color: #42b983;
+  color: #fff;
+  border: none;
+  border-radius: 6px;
+  font-weight: 600;
+  cursor: pointer;
 }
 
-.products-item {
-  display: flex;
-  justify-content: center;
-}
-
-.status-text {
-  text-align: center;
-  color: #2c3e50;
-  font-size: 1rem;
-}
-
-.status-text_error {
-  color: #d63031;
+.show-more-btn:hover {
+  background-color: #36a372;
 }
 </style>
