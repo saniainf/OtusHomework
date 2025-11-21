@@ -1,10 +1,17 @@
 <template>
   <h1>Homework-03</h1>
+  <SearchPanel v-model:search-value="searchValue" :results-count="filteredProducts.length" />
   <section class="products-wrapper">
-    <div v-for="product in visibleProducts" :key="product.id">
-      <ProductCard :product="product" @open-modal="openModal" />
+    <div v-if="filteredProducts.length === 0" class="no-results">
+      <p>Товары не найдены</p>
+      <p>Попробуйте изменить поисковый запрос</p>
     </div>
-    <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
+    <template v-else>
+      <div v-for="product in visibleProducts" :key="product.id">
+        <ProductCard :product="product" @open-modal="openModal" />
+      </div>
+      <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
+    </template>
   </section>
 
   <Modal :is-modal-open="isModalOpen" :product="selectedProduct" @close="closeModal" />
@@ -12,22 +19,45 @@
 
 <script setup>
 import { loadProducts, loadProduct } from './utils/utils.js';
-import { onMounted, ref, computed } from 'vue';
+import { onMounted, ref, computed, watch, shallowRef } from 'vue';
 import ProductCard from './components/ProductCard.vue';
 import Modal from './components/Modal.vue';
+import SearchPanel from './components/SearchPanel.vue';
 
 const STEP = 3;
 
-let products = [];
+const products = shallowRef([]);
+
 const visibleCount = ref(0);
-const visibleProducts = computed(() => products.slice(0, visibleCount.value));
-const canShowMore = computed(() => visibleCount.value < products.length);
+const searchValue = ref('');
 
 const isModalOpen = ref(false);
 const selectedProduct = ref(null);
 
+const visibleProducts = computed(() =>
+  filteredProducts.value.slice(0, visibleCount.value)
+);
+
+const filteredProducts = computed(() => {
+  if (!searchValue.value.trim()) {
+    return products.value;
+  }
+  const searchLower = searchValue.value.toLowerCase();
+  return products.value.filter(product =>
+    product.title.toLowerCase().includes(searchLower)
+  );
+});
+
+watch(searchValue, () => {
+  visibleCount.value = Math.min(STEP, filteredProducts.value.length);
+});
+
+const canShowMore = computed(() =>
+  visibleCount.value < filteredProducts.value.length
+);
+
 function showMore() {
-  visibleCount.value = Math.min(visibleCount.value + STEP, products.length);
+  visibleCount.value = Math.min(visibleCount.value + STEP, filteredProducts.value.length);
 }
 
 async function openModal(productId) {
@@ -41,7 +71,7 @@ function closeModal() {
 }
 
 onMounted(async () => {
-  products = await loadProducts();
+  products.value = await loadProducts();
   visibleCount.value = STEP;
 });
 
@@ -62,6 +92,12 @@ h1 {
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+}
+
+.no-results {
+  text-align: center;
+  font-size: 1rem;
+  color:gray
 }
 
 .show-more-btn {
