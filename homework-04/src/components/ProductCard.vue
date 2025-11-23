@@ -52,7 +52,6 @@ const stars = computed(() => toStarsHTML(Math.round(product.value.rating.rate), 
 .product-card {
   display: flex;
   flex-direction: row;
-  width: 900px;
   background-color: #fff;
   border-radius: 12px;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);

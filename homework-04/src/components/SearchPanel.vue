@@ -1,19 +1,17 @@
 <template>
-  <section class="search-panel">
-    <div class="search-container">
-      <label for="search-input" class="search-label">Поиск товаров</label>
-      <div class="search-input-wrapper">
-        <input id="search-input" v-model="searchLocalValue" type="text" class="search-input" placeholder="Введите название товара..." />
-        <button v-if="searchLocalValue" @click="clear" type="button" class="clear-btn" title="Очистить">
-          ×
-        </button>
-      </div>
-
-      <div v-if="resultsCount !== null" class="results-count">
-        Найдено: {{ resultsCount }} {{ productWord }}
-      </div>
+  <div class="search-container">
+    <label for="search-input" class="search-label">Поиск товаров</label>
+    <div class="search-input-wrapper">
+      <input id="search-input" v-model="searchLocalValue" type="text" class="search-input" placeholder="Введите название товара..." />
+      <button v-if="searchLocalValue" @click="clear" type="button" class="clear-btn" title="Очистить">
+        ×
+      </button>
     </div>
-  </section>
+
+    <div v-if="resultsCount !== null" class="results-count">
+      Найдено: {{ resultsCount }} {{ productWord }}
+    </div>
+  </div>
 </template>
 
 <script setup>
@@ -70,12 +68,6 @@ const productWord = computed(() => {
 </script>
 
 <style scoped>
-.search-panel {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 0 1.5rem;
-}
-
 .search-container {
   background-color: #fff;
   border-radius: 12px;

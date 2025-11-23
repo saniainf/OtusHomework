@@ -1,35 +1,47 @@
 <template>
   <h1>Homework-03</h1>
-  <SearchPanel v-model:searchValue="searchValue" :results-count="filteredProducts.length" />
-  <section class="products-wrapper">
-    <div v-if="filteredProducts.length === 0" class="no-results">
-      <p>Товары не найдены</p>
-      <p>Попробуйте изменить поисковый запрос</p>
+  <div class="page-grid">
+    <!-- Ячейка поиска -->
+    <div class="search-panel-wrapper">
+      <SearchPanel v-model:searchValue="searchValue" :resultsCount="filteredProducts.length" />
     </div>
-    <template v-else>
-      <div v-for="product in visibleProducts" :key="product.id">
-        <ProductCard :product="product" @openModal="openModal" />
+    <!-- Ячейка фильтрации -->
+    <div class="filter-panel-wrapper">
+      <FilterPanel v-model:selectedCategory="selectedCategory" :categories="categories" />
+    </div>
+    <!-- Ячейка контента с товарами -->
+    <div class="products-wrapper">
+      <div v-if="filteredProducts.length === 0" class="no-results">
+        <p>Товары не найдены</p>
+        <p>Попробуйте изменить поисковый запрос</p>
       </div>
-      <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
-    </template>
-  </section>
-
+      <template v-else>
+        <div v-for="product in visibleProducts" :key="product.id">
+          <ProductCard :product="product" @openModal="openModal" />
+        </div>
+        <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
+      </template>
+    </div>
+  </div>
   <Modal :is-modal-open="isModalOpen" :product="selectedProduct" @close="closeModal" />
 </template>
 
 <script setup>
 import { loadProducts, loadProduct } from './utils/utils.js';
-import { onMounted, ref, computed, watch, shallowRef } from 'vue';
+import { onMounted, ref, computed, watch, shallowRef, watchEffect } from 'vue';
 import ProductCard from './components/ProductCard.vue';
 import Modal from './components/Modal.vue';
 import SearchPanel from './components/SearchPanel.vue';
+import FilterPanel from './components/FilterPanel.vue';
 
 const STEP = 3;
 
 const products = shallowRef([]);
+const categories = shallowRef([]);
 
 const visibleCount = ref(0);
 const searchValue = ref('');
+const selectedCategory = ref('');
 
 const isModalOpen = ref(false);
 const selectedProduct = ref(null);
@@ -39,16 +51,19 @@ const visibleProducts = computed(() =>
 );
 
 const filteredProducts = computed(() => {
-  if (!searchValue.value.trim()) {
+  if (!searchValue.value.trim() && !selectedCategory.value) {
     return products.value;
   }
+
   const searchLower = searchValue.value.toLowerCase();
+
   return products.value.filter(product =>
-    product.title.toLowerCase().includes(searchLower)
+    product.title.toLowerCase().includes(searchLower) &&
+    (selectedCategory.value ? product.category === selectedCategory.value : true)
   );
 });
 
-watch(searchValue, () => {
+watchEffect(() => {
   visibleCount.value = Math.min(STEP, filteredProducts.value.length);
 });
 
@@ -72,6 +87,7 @@ function closeModal() {
 
 onMounted(async () => {
   products.value = await loadProducts();
+  categories.value = [...new Set(products.value.map(product => product.category))];
   visibleCount.value = STEP;
 });
 
@@ -85,10 +101,30 @@ h1 {
   font-size: 2rem;
 }
 
+.page-grid {
+  display: grid;
+  grid-template-columns: 300px 900px 300px;
+  grid-template-areas:
+    "empty search"
+    "filter products";
+  gap: 1.5rem;
+  align-items: start;
+  justify-content: center;
+}
+
+.search-panel-wrapper {
+  grid-area: search;
+  width: 100%;
+}
+
+.filter-panel-wrapper {
+  grid-area: filter;
+  width: 100%;
+}
+
 .products-wrapper {
-  max-width: 900px;
-  margin: 0 auto;
-  padding: 1.5rem;
+  grid-area: products;
+  width: 100%;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
@@ -97,7 +133,7 @@ h1 {
 .no-results {
   text-align: center;
   font-size: 1rem;
-  color:gray
+  color: gray
 }
 
 .show-more-btn {
