@@ -14,7 +14,7 @@
       </div>
       <div class="product-footer">
         <span class="product-price">${{ product.price.toFixed(2) }}</span>
-        <button class="add-to-cart-btn">Добавить в корзину</button>
+        <button @click="emit('addToBasket', product.id)" class="add-to-cart-btn">Добавить в корзину</button>
       </div>
     </div>
   </article>
@@ -24,7 +24,7 @@
 import { computed } from 'vue';
 import { toStarsHTML } from '../utils/utils.js';
 
-const props = defineProps({
+const { product } = defineProps({
   product: {
     type: Object,
     required: true,
@@ -33,19 +33,18 @@ const props = defineProps({
     }
   }
 });
-const product = computed(() => props.product);
 
-const emit = defineEmits(['openModal']);
+const emit = defineEmits(['openModal', 'addToBasket']);
 
 function openModal() {
-  emit('openModal', product.value.id);
+  emit('openModal', product.id);
 }
 
 const ratingText = computed(() => {
-  return `${product.value.rating.rate} (${product.value.rating.count} отзывов)`;
+  return `${product.rating.rate} (${product.rating.count} отзывов)`;
 });
 
-const stars = computed(() => toStarsHTML(Math.round(product.value.rating.rate), 5));
+const stars = computed(() => toStarsHTML(Math.round(product.rating.rate), 5));
 </script>
 
 <style scoped>

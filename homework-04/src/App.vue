@@ -17,10 +17,14 @@
       </div>
       <template v-else>
         <div v-for="product in visibleProducts" :key="product.id">
-          <ProductCard :product="product" @openModal="openModal" />
+          <ProductCard :product="product" @openModal="openModal" @addToBasket="addToBasket" />
         </div>
         <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
       </template>
+    </div>
+    <!-- Ячейка корзины -->
+    <div class="basket-panel-wrapper">
+      <BasketPanel :items="basketItems" />
     </div>
   </div>
   <Modal :is-modal-open="isModalOpen" :product="selectedProduct" @close="closeModal" />
@@ -28,16 +32,18 @@
 
 <script setup>
 import { loadProducts, loadProduct } from './utils/utils.js';
-import { onMounted, ref, computed, watch, shallowRef, watchEffect } from 'vue';
+import { onMounted, ref, computed, watch, shallowRef, watchEffect, reactive } from 'vue';
 import ProductCard from './components/ProductCard.vue';
 import Modal from './components/Modal.vue';
 import SearchPanel from './components/SearchPanel.vue';
 import FilterPanel from './components/FilterPanel.vue';
+import BasketPanel from './components/BasketPanel.vue';
 
 const STEP = 3;
 
 const products = shallowRef([]);
 const categories = shallowRef([]);
+const basketItems = ref([]);
 
 const visibleCount = ref(0);
 const searchValue = ref('');
@@ -80,6 +86,13 @@ async function openModal(productId) {
   isModalOpen.value = true;
 }
 
+async function addToBasket(productId) {
+  const product = await loadProduct(productId);
+  if (product) {
+    basketItems.value.push(product);
+  }
+}
+
 function closeModal() {
   isModalOpen.value = false;
   selectedProduct.value = null;
@@ -105,8 +118,8 @@ h1 {
   display: grid;
   grid-template-columns: 300px 900px 300px;
   grid-template-areas:
-    "empty search"
-    "filter products";
+    ". search ."
+    "filter products basket";
   gap: 1.5rem;
   align-items: start;
   justify-content: center;
@@ -119,6 +132,11 @@ h1 {
 
 .filter-panel-wrapper {
   grid-area: filter;
+  width: 100%;
+}
+
+.basket-panel-wrapper {
+  grid-area: basket;
   width: 100%;
 }
 
