@@ -1,6 +1,6 @@
 <template>
   <h1>Homework-03</h1>
-  <SearchPanel v-model:search-value="searchValue" :results-count="filteredProducts.length" />
+  <SearchPanel v-model:searchValue="searchValue" :results-count="filteredProducts.length" />
   <section class="products-wrapper">
     <div v-if="filteredProducts.length === 0" class="no-results">
       <p>Товары не найдены</p>
@@ -8,7 +8,7 @@
     </div>
     <template v-else>
       <div v-for="product in visibleProducts" :key="product.id">
-        <ProductCard :product="product" @open-modal="openModal" />
+        <ProductCard :product="product" @openModal="openModal" />
       </div>
       <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
     </template>
