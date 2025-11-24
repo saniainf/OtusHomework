@@ -1,5 +1,5 @@
 <template>
-  <div v-if="isModalOpen && product" class="backdrop" role="presentation" @click="close">
+  <div v-if="isOpen && product" class="backdrop" role="presentation" @click="close">
     <div class="container" @click.stop>
       <header class="header">
         <h2 class="title">
@@ -25,8 +25,8 @@
 </template>
 
 <script setup>
-const props = defineProps({
-  isModalOpen: {
+const {isOpen, product} = defineProps({
+  isOpen: {
     type: Boolean,
     default: false
   },

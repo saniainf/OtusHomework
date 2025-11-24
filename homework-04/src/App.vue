@@ -27,14 +27,14 @@
       <BasketPanel :items="basketItems" @clear="basketItems = []" @checkout="() => { alert('Оформление заказа') }" />
     </div>
   </div>
-  <Modal :is-modal-open="isModalOpen" :product="selectedProduct" @close="closeModal" />
+  <ProductDetailsModal :isOpen="isProductDetailsModalOpen" :product="selectedProduct" @close="closeProductDetailsModal" />
 </template>
 
 <script setup>
 import { loadProducts, loadProduct } from './utils/utils.js';
 import { onMounted, ref, computed, watch, shallowRef, watchEffect, reactive } from 'vue';
 import ProductCard from './components/ProductCard.vue';
-import Modal from './components/Modal.vue';
+import ProductDetailsModal from './components/ProductDetailsModal.vue';
 import SearchPanel from './components/SearchPanel.vue';
 import FilterPanel from './components/FilterPanel.vue';
 import BasketPanel from './components/BasketPanel.vue';
@@ -49,7 +49,7 @@ const visibleCount = ref(0);
 const searchValue = ref('');
 const selectedCategory = ref('');
 
-const isModalOpen = ref(false);
+const isProductDetailsModalOpen = ref(false);
 const selectedProduct = ref(null);
 
 const visibleProducts = computed(() =>
@@ -83,7 +83,7 @@ function showMore() {
 
 async function openModal(productId) {
   selectedProduct.value = await loadProduct(productId);
-  isModalOpen.value = true;
+  isProductDetailsModalOpen.value = true;
 }
 
 async function addToBasket(productId) {
@@ -93,8 +93,8 @@ async function addToBasket(productId) {
   }
 }
 
-function closeModal() {
-  isModalOpen.value = false;
+function closeProductDetailsModal() {
+  isProductDetailsModalOpen.value = false;
   selectedProduct.value = null;
 }
 
