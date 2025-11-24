@@ -28,11 +28,11 @@
     </div>
   </div>
   <ProductDetailsModal :isOpen="isProductDetailsModalOpen" :product="selectedProduct" @close="closeProductDetailsModal" />
-  <CheckoutModal :isOpen="isCheckoutModalOpen" :items="basketItems" @close="closeCheckoutModal" />
+  <CheckoutModal :isOpen="isCheckoutModalOpen" :items="basketItems" @close="closeCheckoutModal" @confirm="confirmCheckout" />
 </template>
 
 <script setup>
-import { loadProducts, loadProduct } from './utils/utils.js';
+import { loadProducts, loadProduct, checkout } from './utils/utils.js';
 import { onMounted, ref, computed, watch, shallowRef, watchEffect, reactive } from 'vue';
 import ProductCard from './components/ProductCard.vue';
 import ProductDetailsModal from './components/ProductDetailsModal.vue';
@@ -107,6 +107,21 @@ function closeProductDetailsModal() {
 
 function closeCheckoutModal() {
   isCheckoutModalOpen.value = false;
+}
+
+async function confirmCheckout(checkoutData) {
+  try {
+    const result = await checkout(basketItems.value, checkoutData);
+    console.log('Заказ успешно отправлен:', result);
+    
+    basketItems.value = [];
+    
+    isCheckoutModalOpen.value = false;
+    alert('Заказ успешно оформлен! Данные отправлены на сервер.');
+  } catch (error) {
+    console.error('Ошибка при оформлении заказа:', error);
+    alert('Произошла ошибка при оформлении заказа. Попробуйте ещё раз.');
+  }
 }
 
 onMounted(async () => {

@@ -13,17 +13,64 @@
       <div class="body">
         <div class="content">
           <form class="checkout-form">
+            <!-- Поле ввода имени с валидацией -->
             <div class="form-field">
               <label for="checkout-name" class="form-label">Имя</label>
-              <input id="checkout-name" type="text" class="form-input" placeholder="Введите ваше имя" />
+              <input 
+                id="checkout-name" 
+                v-model="formData.name" 
+                @blur="validator.name.$touch()"
+                type="text" 
+                class="form-input" 
+                :class="{ 'form-input-error': validator.name.$error }"
+                placeholder="Введите ваше имя" 
+              />
+              <!-- Отображение ошибок валидации для поля имени -->
+              <div v-if="validator.name.$error" class="form-error">
+                <span v-for="error of validator.name.$errors" :key="error.$uid">
+                  {{ error.$message }}
+                </span>
+              </div>
             </div>
+
+            <!-- Поле ввода почты с валидацией -->
             <div class="form-field">
               <label for="checkout-email" class="form-label">Почта</label>
-              <input id="checkout-email" type="email" class="form-input" placeholder="example@mail.com" />
+              <input 
+                id="checkout-email" 
+                v-model="formData.email" 
+                @blur="validator.email.$touch()"
+                type="email" 
+                class="form-input" 
+                :class="{ 'form-input-error': validator.email.$error }"
+                placeholder="example@mail.com" 
+              />
+              <!-- Отображение ошибок валидации для поля почты -->
+              <div v-if="validator.email.$error" class="form-error">
+                <span v-for="error of validator.email.$errors" :key="error.$uid">
+                  {{ error.$message }}
+                </span>
+              </div>
             </div>
+
+            <!-- Поле ввода адреса с валидацией -->
             <div class="form-field">
               <label for="checkout-address" class="form-label">Адрес</label>
-              <textarea id="checkout-address" class="form-textarea" rows="3" placeholder="Введите адрес доставки"></textarea>
+              <textarea 
+                id="checkout-address" 
+                v-model="formData.address" 
+                @blur="validator.address.$touch()"
+                class="form-textarea" 
+                :class="{ 'form-input-error': validator.address.$error }"
+                rows="3" 
+                placeholder="Введите адрес доставки"
+              ></textarea>
+              <!-- Отображение ошибок валидации для поля адреса -->
+              <div v-if="validator.address.$error" class="form-error">
+                <span v-for="error of validator.address.$errors" :key="error.$uid">
+                  {{ error.$message }}
+                </span>
+              </div>
             </div>
           </form>
 
@@ -33,7 +80,7 @@
 
           <div class="checkout-actions">
             <button type="button" class="checkout-btn checkout-btn-cancel" @click="close">Отменить</button>
-            <button type="button" class="checkout-btn checkout-btn-confirm">Подтвердить</button>
+            <button type="button" class="checkout-btn checkout-btn-confirm" @click="handleSubmit">Подтвердить</button>
           </div>
         </div>
       </div>
@@ -42,7 +89,9 @@
 </template>
 
 <script setup>
-import { computed } from 'vue';
+import { computed, reactive } from 'vue';
+import { useVuelidate } from '@vuelidate/core';
+import { required, email, minLength, helpers } from '@vuelidate/validators';
 import { productWord } from '../utils/utils.js';
 
 const { isOpen, items } = defineProps({
@@ -56,11 +105,52 @@ const { isOpen, items } = defineProps({
   }
 });
 
-const emit = defineEmits(['close']);
+const emit = defineEmits(['close', 'confirm']);
 
 const products = computed(() => productWord(items.length));
 
+const formData = reactive({
+  name: '',
+  email: '',
+  address: ''
+});
+
+const rules = {
+  name: { 
+    required: helpers.withMessage('Имя обязательно', required),
+    minLength: helpers.withMessage('Минимум 2 символа', minLength(2))
+  },
+  email: { 
+    required: helpers.withMessage('Почта обязательна', required),
+    email: helpers.withMessage('Введите корректный email', email)
+  },
+  address: { 
+    required: helpers.withMessage('Адрес обязателен', required),
+    minLength: helpers.withMessage('Минимум 10 символов', minLength(10))
+  }
+};
+
+const validator = useVuelidate(rules, formData);
+
+async function handleSubmit() {
+  const isValid = await validator.value.$validate();
+  
+  if (!isValid) {
+    validator.value.$touch();
+    return;
+  }
+  
+  emit('confirm', { ...formData });
+
+  close();
+}
+
 function close() {
+  formData.name = '';
+  formData.email = '';
+  formData.address = '';
+  validator.value.$reset();
+  
   emit('close');
 }
 </script>
@@ -219,5 +309,17 @@ function close() {
 
 .checkout-btn-confirm:hover {
   background-color: #36a372;
+}
+
+/* Стиль для поля с ошибкой валидации */
+.form-input-error {
+  border-color: #e74c3c; /* Красная рамка для невалидного поля */
+}
+
+/* Блок с сообщением об ошибке валидации */
+.form-error {
+  font-size: 0.85rem; /* Уменьшенный размер текста ошибки */
+  color: #e74c3c; /* Красный цвет текста ошибки */
+  margin-top: 0.25rem; /* Небольшой отступ сверху от поля */
 }
 </style>
