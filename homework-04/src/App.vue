@@ -1,5 +1,5 @@
 <template>
-  <h1>Homework-03</h1>
+  <h1>Homework-04</h1>
   <div class="page-grid">
     <!-- Ячейка поиска -->
     <div class="search-panel-wrapper">
