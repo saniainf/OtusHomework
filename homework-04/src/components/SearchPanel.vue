@@ -9,13 +9,14 @@
     </div>
 
     <div v-if="resultsCount !== null" class="results-count">
-      Найдено: {{ resultsCount }} {{ productWord }}
+      Найдено: {{ resultsCount }} {{ products }}
     </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
+import { productWord } from '../utils/utils.js';
 
 const { searchValue, resultsCount } = defineProps({
   searchValue: {
@@ -41,30 +42,7 @@ function clear() {
   emit('update:searchValue', '');
 }
 
-/**
- * Правильное склонение слова "товар"
- */
-const productWord = computed(() => {
-  const count = resultsCount;
-  if (count === null) return 'товаров';
-
-  const lastDigit = count % 10;
-  const lastTwoDigits = count % 100;
-
-  if (lastTwoDigits >= 11 && lastTwoDigits <= 14) {
-    return 'товаров';
-  }
-
-  if (lastDigit === 1) {
-    return 'товар';
-  }
-
-  if (lastDigit >= 2 && lastDigit <= 4) {
-    return 'товара';
-  }
-
-  return 'товаров';
-});
+const products = computed(() => productWord(resultsCount));
 </script>
 
 <style scoped>

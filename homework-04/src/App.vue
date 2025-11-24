@@ -17,17 +17,18 @@
       </div>
       <template v-else>
         <div v-for="product in visibleProducts" :key="product.id">
-          <ProductCard :product="product" @openModal="openModal" @addToBasket="addToBasket" />
+          <ProductCard :product="product" @showDetails="openProductDetailsModal" @addToBasket="addToBasket" />
         </div>
         <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
       </template>
     </div>
     <!-- Ячейка корзины -->
     <div class="basket-panel-wrapper">
-      <BasketPanel :items="basketItems" @clear="basketItems = []" @checkout="() => { alert('Оформление заказа') }" />
+      <BasketPanel :items="basketItems" @clear="basketItems = []" @checkout="openCheckoutModal" />
     </div>
   </div>
   <ProductDetailsModal :isOpen="isProductDetailsModalOpen" :product="selectedProduct" @close="closeProductDetailsModal" />
+  <CheckoutModal :isOpen="isCheckoutModalOpen" :items="basketItems" @close="closeCheckoutModal" />
 </template>
 
 <script setup>
@@ -38,6 +39,7 @@ import ProductDetailsModal from './components/ProductDetailsModal.vue';
 import SearchPanel from './components/SearchPanel.vue';
 import FilterPanel from './components/FilterPanel.vue';
 import BasketPanel from './components/BasketPanel.vue';
+import CheckoutModal from './components/CheckoutModal.vue';
 
 const STEP = 3;
 
@@ -51,6 +53,7 @@ const selectedCategory = ref('');
 
 const isProductDetailsModalOpen = ref(false);
 const selectedProduct = ref(null);
+const isCheckoutModalOpen = ref(false);
 
 const visibleProducts = computed(() =>
   filteredProducts.value.slice(0, visibleCount.value)
@@ -81,9 +84,13 @@ function showMore() {
   visibleCount.value = Math.min(visibleCount.value + STEP, filteredProducts.value.length);
 }
 
-async function openModal(productId) {
+async function openProductDetailsModal(productId) {
   selectedProduct.value = await loadProduct(productId);
   isProductDetailsModalOpen.value = true;
+}
+
+async function openCheckoutModal() {
+  isCheckoutModalOpen.value = true;
 }
 
 async function addToBasket(productId) {
@@ -96,6 +103,10 @@ async function addToBasket(productId) {
 function closeProductDetailsModal() {
   isProductDetailsModalOpen.value = false;
   selectedProduct.value = null;
+}
+
+function closeCheckoutModal() {
+  isCheckoutModalOpen.value = false;
 }
 
 onMounted(async () => {

@@ -5,7 +5,7 @@
     </div>
     <div class="product-info">
       <span class="product-category">{{ product.category }}</span>
-      <h2 class="product-title" @click="openModal">{{ product.title }}</h2>
+      <h2 class="product-title" @click="showDetails">{{ product.title }}</h2>
       <div class="product-rating">
         <span class="rating-stars" v-html="stars"></span>
         <span class="rating-info">
@@ -34,10 +34,10 @@ const { product } = defineProps({
   }
 });
 
-const emit = defineEmits(['openModal', 'addToBasket']);
+const emit = defineEmits(['showDetails', 'addToBasket']);
 
-function openModal() {
-  emit('openModal', product.id);
+function showDetails() {
+  emit('showDetails', product.id);
 }
 
 const ratingText = computed(() => {

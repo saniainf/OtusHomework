@@ -98,7 +98,7 @@ function close() {
   border-radius: 4px;
 }
 
-.close:hover {
+.close-btn:hover {
   background-color: #f5f5f5;
   color: #2c3e50;
 }
