@@ -13,6 +13,12 @@
     </ul>
 
     <div v-if="items.length" class="basket-total">Итого: {{ total }} $</div>
+
+    <!-- Блок управляющих кнопок корзины -->
+    <div v-if="items.length" class="basket-actions">
+      <button type="button" class="basket-btn basket-btn-clear" @click="emit('clear')">Очистить</button>
+      <button type="button" class="basket-btn basket-btn-checkout" @click="emit('checkout')">Оформить</button>
+    </div>
   </div>
 </template>
 
@@ -25,6 +31,9 @@ const { items } = defineProps({
     default: () => []
   }
 });
+
+// Объявление событий компонента для взаимодействия с родителем
+const emit = defineEmits(['clear', 'checkout']);
 
 const total = computed(() => {
   return items.reduce((sum, item) => sum + item.price, 0).toFixed(2);
@@ -106,5 +115,41 @@ const total = computed(() => {
   color: #2c3e50;
   border-top: 1px solid #e2e2e2;
   padding-top: 0.75rem;
+}
+
+.basket-actions {
+  display: flex;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.basket-btn {
+  flex: 1;
+  padding: 0.75rem 1rem;
+  font-size: 0.95rem;
+  font-weight: 600;
+  border: none;
+  border-radius: 6px;
+  cursor: pointer;
+}
+
+.basket-btn-clear {
+  background-color: #fff;
+  color: #666;
+  border: 1px solid #ddd;
+}
+
+.basket-btn-clear:hover {
+  background-color: #f5f5f5;
+}
+
+
+.basket-btn-checkout {
+  background-color: #42b983;
+  color: #fff;
+}
+
+.basket-btn-checkout:hover {
+  background-color: #36a372;
 }
 </style>

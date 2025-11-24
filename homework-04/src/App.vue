@@ -24,7 +24,7 @@
     </div>
     <!-- Ячейка корзины -->
     <div class="basket-panel-wrapper">
-      <BasketPanel :items="basketItems" />
+      <BasketPanel :items="basketItems" @clear="basketItems = []" @checkout="() => { alert('Оформление заказа') }" />
     </div>
   </div>
   <Modal :is-modal-open="isModalOpen" :product="selectedProduct" @close="closeModal" />
