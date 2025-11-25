@@ -10,10 +10,10 @@ const counter = useCounterStore();
     {{ counter.count }}
   </div>
   <nav class="main-nav" aria-label="Главная навигация">
-    <router-link to="/">Главная</router-link>
-    <router-link to="/about">О проекте</router-link>
+    <RouterLink to="/">Главная</RouterLink>
+    <RouterLink to="/about">О проекте</RouterLink>
   </nav>
-  <router-view />
+  <RouterView />
 </template>
 
 <style scoped>
