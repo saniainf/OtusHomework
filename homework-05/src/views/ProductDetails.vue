@@ -18,7 +18,7 @@
         </div>
 
         <div class="product-footer">
-          <button @click="goToProducts" class="footer-btn back-btn">К списку товаров</button>
+          <button @click="navigateToProducts" class="footer-btn back-btn">К списку товаров</button>
           <button @click="addToBasket" class="footer-btn add-to-basket-btn">Добавить в корзину</button>
         </div>
       </div>
@@ -30,10 +30,10 @@
 
 import { onMounted, ref, shallowRef } from 'vue';
 import { loadProduct } from '../utils/utils.js';
-import { useRoute, useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 
-const route = useRoute();
 const router = useRouter();
+const route = useRoute();
 const productId = route.params.id;
 
 const product = shallowRef({});
@@ -46,8 +46,11 @@ function addToBasket() {
   emit('addToBasket', product.value.id);
 }
 
-function goToProducts() {
-  router.push('/');
+function navigateToProducts() {
+  router.push({
+    path: '/',
+    query: route.query
+  });
 }
 
 </script>

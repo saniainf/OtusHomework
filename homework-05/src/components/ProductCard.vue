@@ -22,10 +22,12 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, useRoute } from 'vue-router';
 import { toStarsHTML } from '../utils/utils.js';
 
 const router = useRouter();
+const route = useRoute();
+
 const { product } = defineProps({
   product: {
     type: Object,
@@ -39,7 +41,10 @@ const { product } = defineProps({
 const emit = defineEmits(['addToBasket']);
 
 function navigateToDetails() {
-  router.push({ path: `/product/${product.id}` });
+  router.push({
+    path: `/product/${product.id}`,
+    query: route.query
+  });
 }
 
 function addToBasket() {

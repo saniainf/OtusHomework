@@ -25,11 +25,15 @@
 </template>
 
 <script setup>
+import { onMounted, ref, computed, shallowRef, watchEffect, watch } from 'vue';
+import { useRouter, useRoute } from 'vue-router';
 import { loadProducts } from '../utils/utils.js';
-import { onMounted, ref, computed, shallowRef, watchEffect } from 'vue';
 import ProductCard from '../components/ProductCard.vue';
 import SearchPanel from '../components/SearchPanel.vue';
 import FilterPanel from '../components/FilterPanel.vue';
+
+const router = useRouter();
+const route = useRoute();
 
 const STEP = 3;
 
@@ -39,6 +43,8 @@ const categories = shallowRef([]);
 const visibleCount = ref(0);
 const searchValue = ref('');
 const selectedCategory = ref('');
+
+const isInitialized = ref(false);
 
 const filteredProducts = computed(() => {
   if (!searchValue.value.trim() && !selectedCategory.value) {
@@ -58,7 +64,9 @@ const visibleProducts = computed(() =>
 );
 
 watchEffect(() => {
-  visibleCount.value = Math.min(STEP, filteredProducts.value.length);
+  if (!isInitialized.value) {
+    visibleCount.value = Math.min(STEP, filteredProducts.value.length);
+  }
 });
 
 const canShowMore = computed(() =>
@@ -69,10 +77,43 @@ function showMore() {
   visibleCount.value = Math.min(visibleCount.value + STEP, filteredProducts.value.length);
 }
 
+function initializeFromQuery() {
+  searchValue.value = route.query.search || '';
+  selectedCategory.value = route.query.category || '';
+  visibleCount.value = route.query.visible
+    ? parseInt(route.query.visible)
+    : STEP;
+  
+  isInitialized.value = true;
+}
+
+function updateQueryParams() {
+  const query = {};
+
+  if (searchValue.value) {
+    query.search = searchValue.value;
+  }
+  if (selectedCategory.value) {
+    query.category = selectedCategory.value;
+  }
+  if (visibleCount.value !== STEP) {
+    query.visible = visibleCount.value;
+  }
+
+  router.replace({ query });
+}
+
+watch([searchValue, selectedCategory, visibleCount], () => {
+  if (isInitialized.value) {
+    updateQueryParams();
+  }
+});
+
 onMounted(async () => {
   products.value = await loadProducts();
   categories.value = [...new Set(products.value.map(product => product.category))];
-  visibleCount.value = STEP;
+
+  initializeFromQuery();
 });
 
 </script>
