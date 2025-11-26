@@ -25,7 +25,7 @@
 </template>
 
 <script setup>
-import { onMounted, ref, computed, shallowRef, watchEffect, watch } from 'vue';
+import { onMounted, ref, computed, shallowRef, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { loadProducts } from '../utils/utils.js';
 import ProductCard from '../components/ProductCard.vue';
@@ -40,11 +40,12 @@ const STEP = 3;
 const products = shallowRef([]);
 const categories = shallowRef([]);
 
-const visibleCount = ref(0);
+const visibleCount = ref(STEP);
 const searchValue = ref('');
 const selectedCategory = ref('');
 
-const isInitialized = ref(false);
+// флаг для отслеживания восстановления состояния из URL
+const isRestoring = ref(true);
 
 const filteredProducts = computed(() => {
   if (!searchValue.value.trim() && !selectedCategory.value) {
@@ -63,28 +64,12 @@ const visibleProducts = computed(() =>
   filteredProducts.value.slice(0, visibleCount.value)
 );
 
-watchEffect(() => {
-  if (!isInitialized.value) {
-    visibleCount.value = Math.min(STEP, filteredProducts.value.length);
-  }
-});
-
 const canShowMore = computed(() =>
   visibleCount.value < filteredProducts.value.length
 );
 
 function showMore() {
   visibleCount.value = Math.min(visibleCount.value + STEP, filteredProducts.value.length);
-}
-
-function initializeFromQuery() {
-  searchValue.value = route.query.search || '';
-  selectedCategory.value = route.query.category || '';
-  visibleCount.value = route.query.visible
-    ? parseInt(route.query.visible)
-    : STEP;
-  
-  isInitialized.value = true;
 }
 
 function updateQueryParams() {
@@ -103,17 +88,37 @@ function updateQueryParams() {
   router.replace({ query });
 }
 
-watch([searchValue, selectedCategory, visibleCount], () => {
-  if (isInitialized.value) {
-    updateQueryParams();
+watch([searchValue, selectedCategory, visibleCount], (newValues, oldValues) => {
+  if (isRestoring.value) return;
+
+  const filtersChanged = newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1];
+  if (filtersChanged) {
+    visibleCount.value = Math.min(STEP, filteredProducts.value.length);
   }
+
+  updateQueryParams();
 });
 
 onMounted(async () => {
   products.value = await loadProducts();
   categories.value = [...new Set(products.value.map(product => product.category))];
 
-  initializeFromQuery();
+  if (route.query.search) {
+    searchValue.value = route.query.search;
+  }
+  if (route.query.category) {
+    selectedCategory.value = route.query.category;
+  }
+  if (route.query.visible) {
+    const parsed = Number.parseInt(route.query.visible, 10);
+    if (Number.isFinite(parsed) && parsed > 0) {
+      visibleCount.value = parsed;
+    }
+  }
+
+  // ожидание следующего тика
+  await nextTick();
+  isRestoring.value = false;
 });
 
 </script>
