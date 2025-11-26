@@ -7,26 +7,17 @@
         ×
       </button>
     </div>
-
-    <div v-if="resultsCount !== null" class="results-count">
-      Найдено: {{ resultsCount }} {{ products }}
-    </div>
   </div>
 </template>
 
 <script setup>
 import { computed } from 'vue';
-import { productWord } from '../utils/utils.js';
 
-const { searchValue, resultsCount } = defineProps({
+const { searchValue } = defineProps({
   searchValue: {
     type: String,
     default: ''
   },
-  resultsCount: {
-    type: Number,
-    default: null
-  }
 });
 
 const emit = defineEmits(['update:searchValue']);
@@ -42,7 +33,6 @@ function clear() {
   emit('update:searchValue', '');
 }
 
-const products = computed(() => productWord(resultsCount));
 </script>
 
 <style scoped>
@@ -102,10 +92,4 @@ const products = computed(() => productWord(resultsCount));
   color: #2c3e50;
 }
 
-.results-count {
-  margin-top: 0.75rem;
-  font-size: 0.875rem;
-  color: #666;
-  text-align: right;
-}
 </style>

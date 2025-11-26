@@ -74,7 +74,7 @@ export async function checkout(items, data) {
 /**
  * Правильное склонение слова "товар"
  */
-export function productWord(count) {
+export function productWordComputing(count) {
   if (count === null) return 'товаров';
 
   const lastDigit = count % 10;

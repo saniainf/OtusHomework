@@ -67,7 +67,7 @@ function navigateToProducts() {
 .container {
   background-color: #fff;
   border-radius: 12px;
-  width: 700px;
+  width: 900px;
   max-height: 90vh;
   box-shadow: 0 0 32px rgba(0, 0, 0, 0.3);
   display: flex;

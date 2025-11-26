@@ -1,14 +1,12 @@
 <template>
   <div class="page-grid">
-    <!-- Ячейка поиска -->
-    <div class="search-panel-wrapper">
-      <SearchPanel v-model:searchValue="searchValue" :resultsCount="filteredProducts.length" />
-    </div>
-    <!-- Ячейка фильтрации -->
     <div class="filter-panel-wrapper">
+      <SearchPanel v-model:searchValue="searchValue" />
       <FilterPanel v-model:selectedCategory="selectedCategory" :categories="categories" />
+      <div class="filter-count">
+        Найдено: {{ filteredProducts.length }} {{ productWord }}
+      </div>
     </div>
-    <!-- Ячейка контента с товарами -->
     <div class="products-wrapper">
       <div v-if="filteredProducts.length === 0" class="no-results">
         <p>Товары не найдены</p>
@@ -27,7 +25,7 @@
 <script setup>
 import { onMounted, ref, computed, shallowRef, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { loadProducts } from '../utils/utils.js';
+import { loadProducts, productWordComputing } from '../utils/utils.js';
 import ProductCard from '../components/ProductCard.vue';
 import SearchPanel from '../components/SearchPanel.vue';
 import FilterPanel from '../components/FilterPanel.vue';
@@ -121,6 +119,8 @@ onMounted(async () => {
   isRestoring.value = false;
 });
 
+const productWord = computed(() => productWordComputing(filteredProducts.value.length));
+
 </script>
 
 <style scoped>
@@ -135,19 +135,16 @@ h1 {
   display: grid;
   grid-template-columns: 300px 900px 300px;
   grid-template-areas:
-    ". search ."
-    "filter products basket";
+    "filter products .";
   gap: 1.5rem;
   align-items: start;
   justify-content: center;
 }
 
-.search-panel-wrapper {
-  grid-area: search;
-  width: 100%;
-}
-
 .filter-panel-wrapper {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
   grid-area: filter;
   width: 100%;
 }
@@ -184,5 +181,15 @@ h1 {
 
 .show-more-btn:hover {
   background-color: #36a372;
+}
+
+.filter-count {
+  background-color: #fff;
+  border-radius: 12px;
+  padding: 1.5rem;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  font-size: 0.875rem;
+  color: #666;
+  text-align: right;
 }
 </style>
