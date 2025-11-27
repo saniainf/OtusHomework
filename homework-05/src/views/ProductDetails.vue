@@ -18,7 +18,7 @@
         </div>
 
         <div class="product-footer">
-          <button @click="navigateToProducts" class="footer-btn back-btn">К списку товаров</button>
+          <button @click="navigateToBack" class="footer-btn back-btn">Назад</button>
           <button @click="addToBasket" class="footer-btn add-to-basket-btn">Добавить в корзину</button>
         </div>
       </div>
@@ -46,11 +46,12 @@ function addToBasket() {
   emit('addToBasket', product.value.id);
 }
 
-function navigateToProducts() {
-  router.push({
-    path: '/',
-    query: route.query
-  });
+function navigateToBack() {
+  if (window.history.length > 1) {
+    router.back();
+  } else {
+    router.push('/');
+  }
 }
 
 </script>

@@ -40,10 +40,12 @@ const { product } = defineProps({
 
 const emit = defineEmits(['addToBasket']);
 
+/**
+ * Навигация на страницу деталей товара
+ */
 function navigateToDetails() {
   router.push({
-    path: `/product/${product.id}`,
-    query: route.query
+    path: `/product/${product.id}`
   });
 }
 
