@@ -27,13 +27,14 @@
 </template>
 
 <script setup>
-
-import { onMounted, ref, shallowRef } from 'vue';
-import { loadProduct } from '../utils/utils.js';
+import { onMounted, shallowRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { useBasketStore } from '../stores/basket.js';
+import { loadProduct } from '../utils/utils.js';
 
 const router = useRouter();
 const route = useRoute();
+const basket = useBasketStore();
 const productId = route.params.id;
 
 const product = shallowRef({});
@@ -43,15 +44,11 @@ onMounted(async () => {
 });
 
 function addToBasket() {
-  emit('addToBasket', product.value.id);
+  basket.add(product.value);
 }
 
 function navigateToBack() {
-  if (window.history.length > 1) {
-    router.back();
-  } else {
-    router.push('/');
-  }
+  router.back();
 }
 
 </script>

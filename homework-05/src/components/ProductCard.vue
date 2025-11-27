@@ -22,11 +22,12 @@
 
 <script setup>
 import { computed } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+import { useRouter } from 'vue-router';
+import { useBasketStore } from '../stores/basket.js';
 import { toStarsHTML } from '../utils/utils.js';
 
 const router = useRouter();
-const route = useRoute();
+const basket = useBasketStore();
 
 const { product } = defineProps({
   product: {
@@ -38,11 +39,6 @@ const { product } = defineProps({
   }
 });
 
-const emit = defineEmits(['addToBasket']);
-
-/**
- * Навигация на страницу деталей товара
- */
 function navigateToDetails() {
   router.push({
     path: `/product/${product.id}`
@@ -50,7 +46,7 @@ function navigateToDetails() {
 }
 
 function addToBasket() {
-  emit('addToBasket', product.id);
+  basket.add(product);
 }
 
 const ratingText = computed(() => {

@@ -115,6 +115,7 @@ onMounted(async () => {
   }
 
   // ожидание следующего тика
+  // и потом установка флага восстановления
   await nextTick();
   isRestoring.value = false;
 });

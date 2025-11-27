@@ -1,27 +1,26 @@
 <template>
   <header class="app-header">
-    <!-- Логотип/название приложения слева -->
     <div class="app-title">
       <h1>Homework-05</h1>
     </div>
 
-    <!-- Иконка корзины с количеством товаров справа -->
     <div class="basket-icon" @click="navigateToBasket">
       <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
         <circle cx="9" cy="21" r="1"></circle>
         <circle cx="20" cy="21" r="1"></circle>
         <path d="M1 1h4l2.68 13.39a2 2 0 0 0 2 1.61h9.72a2 2 0 0 0 2-1.61L23 6H6"></path>
       </svg>
-      <!-- Бейдж с количеством товаров -->
-      <span class="basket-count">3</span>
+      <span class="basket-count">{{ basket.totalCount }}</span>
     </div>
   </header>
 </template>
 
 <script setup>
 import { useRouter } from 'vue-router';
+import { useBasketStore } from '../stores/basket.js';
 
 const router = useRouter();
+const basket = useBasketStore();
 
 function navigateToBasket() {
   router.push('/basket');
