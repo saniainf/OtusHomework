@@ -1,7 +1,7 @@
 <template>
   <header class="app-header">
     <div class="app-title">
-      <h1>Homework-05</h1>
+      <h1 @click="navigateToHome">Homework-05</h1>
     </div>
 
     <div class="basket-icon" @click="navigateToBasket">
@@ -25,6 +25,10 @@ const basket = useBasketStore();
 function navigateToBasket() {
   router.push('/basket');
 }
+
+function navigateToHome() {
+  router.push('/');
+}
 </script>
 
 <style scoped>
@@ -46,6 +50,11 @@ function navigateToBasket() {
   font-size: 1.5rem;
   font-weight: 600;
   color: #2c3e50;
+  cursor: pointer;
+}
+
+.app-title h1:hover {
+  color: #42b983;
 }
 
 .basket-icon {
