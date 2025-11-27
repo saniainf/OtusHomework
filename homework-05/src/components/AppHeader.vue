@@ -23,6 +23,10 @@ const router = useRouter();
 const basket = useBasketStore();
 
 function navigateToBasket() {
+  if (basket.totalCount === 0) {
+    return;
+  }
+
   router.push('/basket');
 }
 

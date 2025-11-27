@@ -1,7 +1,7 @@
 <template>
   <div class="basket-page">
     <div class="basket-header">
-      <button @click="navigateToBack" class="back-to-products-btn">
+      <button @click="navigateToBack" class="back-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <path d="M19 12H5M12 19l-7-7 7-7" />
         </svg>
@@ -10,12 +10,7 @@
       <h1 class="basket-title">Корзина</h1>
     </div>
 
-    <div v-if="items.length === 0" class="empty-basket">
-      <p>Ваша корзина пуста</p>
-      <button @click="navigateToBack" class="continue-shopping-btn">Перейти к покупкам</button>
-    </div>
-
-    <div v-else class="basket-content">
+    <div class="basket-content">
       <div class="basket-items">
         <BasketProductCard
           v-for="item in items"
@@ -42,7 +37,7 @@
         </div>
 
         <div class="basket-actions">
-          <button @click="basket.clear()" class="clear-btn">Очистить корзину</button>
+          <button @click="clearBasket" class="clear-btn">Очистить корзину</button>
           <button @click="navigateToCheckout" class="checkout-btn">Оформить заказ</button>
         </div>
       </div>
@@ -59,6 +54,11 @@ import BasketProductCard from '../components/BasketProductCard.vue';
 const router = useRouter();
 const basket = useBasketStore();
 const { items, totalCount, itemsCount, totalAmount } = storeToRefs(basket);
+
+function clearBasket() {
+  basket.clear();
+  navigateToBack();
+}
 
 function navigateToBack() {
   router.back();
@@ -85,7 +85,7 @@ function navigateToCheckout() {
   width: 900px;
 }
 
-.back-to-products-btn {
+.back-btn {
   display: flex;
   align-items: center;
   gap: 0.5rem;
@@ -100,11 +100,11 @@ function navigateToCheckout() {
   transition: all 0.2s ease;
 }
 
-.back-to-products-btn:hover {
+.back-btn:hover {
   background-color: #e0e0e0;
 }
 
-.back-to-products-btn svg {
+.back-btn svg {
   display: block;
 }
 
@@ -113,36 +113,6 @@ function navigateToCheckout() {
   font-weight: 600;
   color: #2c3e50;
   margin: 0;
-}
-
-.empty-basket {
-  text-align: center;
-  padding: 4rem 2rem;
-  background-color: #fff;
-  border-radius: 12px;
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.empty-basket p {
-  font-size: 1.25rem;
-  color: #666;
-  margin-bottom: 2rem;
-}
-
-.continue-shopping-btn {
-  padding: 1rem 2rem;
-  font-size: 1rem;
-  font-weight: 600;
-  background-color: #42b983;
-  color: #fff;
-  border: none;
-  border-radius: 8px;
-  cursor: pointer;
-  transition: background-color 0.2s ease;
-}
-
-.continue-shopping-btn:hover {
-  background-color: #36a372;
 }
 
 .basket-content {
