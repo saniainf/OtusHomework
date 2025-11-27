@@ -65,7 +65,7 @@ function navigateToBack() {
 }
 
 function navigateToCheckout() {
-  alert('Оформление заказа будет реализовано позже');
+  router.push({ path: '/checkout' });
 }
 </script>
 
