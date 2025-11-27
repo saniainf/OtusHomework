@@ -64,11 +64,6 @@ const stars = computed(() => toStarsHTML(Math.round(product.rating.rate), 5));
   border-radius: 12px;
   box-shadow: 0 0 12px rgba(0, 0, 0, 0.2);
   overflow: hidden;
-  transition: box-shadow 0.3s ease;
-}
-
-.product-card:hover {
-  box-shadow: 0 0 18px rgba(0, 0, 0, 0.3);
 }
 
 .product-image-container {
