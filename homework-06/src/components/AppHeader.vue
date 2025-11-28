@@ -93,6 +93,7 @@ function navigateToLogin() {
   padding: 0.5rem 1rem;
   background-color: #f5f5f5;
   border-radius: 8px;
+  margin-right: 1rem;
 }
 
 .login-btn {
