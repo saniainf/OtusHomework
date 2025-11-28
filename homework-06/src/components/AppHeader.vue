@@ -6,7 +6,7 @@
 
     <div class="header-actions">
       <button v-if="!isLoggedIn && !isLoggedInPage" class="login-btn" @click="navigateToLogin">Войти</button>
-      <div v-else>
+      <div v-else v-if="!isLoggedInPage">
         <span class="login-label">{{ userName }}</span>
         <button class="login-btn" @click="auth.logout()">Выйти</button>
       </div>

@@ -21,7 +21,7 @@
 </template>
 
 <script setup>
-import { ref } from 'vue';
+import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../stores/authStore.js';
@@ -47,6 +47,11 @@ function handleLogin() {
       alert('Ошибка при входе. Пожалуйста, проверьте ваши данные и попробуйте снова.');
     });
 }
+
+onMounted(() => {
+  console.log('Логин:', 'johnd');
+  console.log('Пароль:', 'm38rmF$');
+});
 </script>
 
 <style scoped>
