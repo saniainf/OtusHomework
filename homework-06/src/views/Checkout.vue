@@ -67,7 +67,7 @@ import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, minLength, helpers } from '@vuelidate/validators';
-import { useBasketStore } from '../stores/basket.js';
+import { useBasketStore } from '../stores/basketStore.js';
 import { productWordComputing } from '../utils/utils.js';
 
 const router = useRouter();

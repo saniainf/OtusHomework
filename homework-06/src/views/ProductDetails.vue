@@ -29,7 +29,7 @@
 <script setup>
 import { onMounted, shallowRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { useBasketStore } from '../stores/basket.js';
+import { useBasketStore } from '../stores/basketStore.js';
 import { loadProduct } from '../utils/utils.js';
 
 const router = useRouter();

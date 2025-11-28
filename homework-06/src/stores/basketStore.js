@@ -2,7 +2,7 @@ import { computed } from 'vue';
 import { defineStore } from 'pinia';
 import { useLocalStorage } from '@vueuse/core';
 
-const LOCAL_KEY = 'homework-05.basket';
+const LOCAL_KEY = 'homework-06.basket';
 
 export const useBasketStore = defineStore('basket', () => {
   const items = useLocalStorage(LOCAL_KEY, []);

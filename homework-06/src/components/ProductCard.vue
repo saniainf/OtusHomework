@@ -23,7 +23,7 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
-import { useBasketStore } from '../stores/basket.js';
+import { useBasketStore } from '../stores/basketStore.js';
 import { toStarsHTML } from '../utils/utils.js';
 
 const router = useRouter();

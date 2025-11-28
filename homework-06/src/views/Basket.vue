@@ -48,7 +48,7 @@
 <script setup>
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
-import { useBasketStore } from '../stores/basket.js';
+import { useBasketStore } from '../stores/basketStore.js';
 import BasketProductCard from '../components/BasketProductCard.vue';
 
 const router = useRouter();

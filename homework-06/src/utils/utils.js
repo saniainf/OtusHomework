@@ -34,6 +34,26 @@ export async function loadProduct(id) {
   }
 }
 
+export async function login(username, password) {
+  try {
+    const credentials = { username: username, password: password };
+    const response = await fetch('https://fakestoreapi.com/auth/login', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(credentials)
+    })
+
+    if (!response.ok) {
+      throw new Error('Ошибка сети');
+    }
+
+    return await response.json();
+  } catch (error) {
+    console.error('Не удалось выполнить вход', error);
+    return null;
+  }
+}
+
 /**
  * Отправка заказа на сервер
  * @param {Array} items - Массив товаров в корзине
