@@ -4,28 +4,40 @@ import { createPinia, setActivePinia } from 'pinia'
 import { createRouter, createMemoryHistory } from 'vue-router'
 import App from '../App.vue'
 
-describe('App', () => {
-  let pinia
+function createTestRouter() {
+  return createRouter({
+    history: createMemoryHistory(),
+    routes: [
+      { path: '/', component: { template: '<div>Home</div>' } }
+    ],
+  });
+}
 
-  beforeEach(() => {
-    pinia = createPinia()
-    setActivePinia(pinia)
+async function mountApp() {
+  const pinia = createPinia();
+  setActivePinia(pinia);
+
+  const router = createTestRouter();
+  router.push('/');
+  await router.isReady();
+
+  const wrapper = mount(App, {
+    global: {
+      plugins: [pinia, router],
+    },
   });
 
-  it('app exists', () => {
-    const router = createRouter({
-      history: createMemoryHistory(),
-      routes: [
-        { path: '/', component: { template: '<div>Home</div>' } }
-      ]
-    })
-    
-    const wrapper = mount(App, {
-      global: {
-        plugins: [pinia, router]
-      }
-    })
-    
+  return { wrapper, router };
+}
+
+describe('App', () => {
+  beforeEach(() => {
+    localStorage.clear();
+  });
+
+  it('app exists', async () => {
+    const { wrapper } = await mountApp();
+
     expect(wrapper.exists()).toBe(true)
   });
 })
