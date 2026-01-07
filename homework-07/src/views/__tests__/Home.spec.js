@@ -57,7 +57,7 @@ const ProductCardStub = {
   props: ['product'],
 };
 
-// роутер
+// Роутер
 function createTestRouter() {
   return createRouter({
     history: createMemoryHistory(),
@@ -67,7 +67,7 @@ function createTestRouter() {
   });
 }
 
-// создает wrapper для Home.vue с тремя stub компонентами исользуемыми внутри
+// Создает wrapper для Home.vue с тремя stub компонентами исользуемыми внутри
 async function mountHome(routeInit = { path: '/', query: {} }) {
   const pinia = createPinia();
   setActivePinia(pinia);
@@ -134,19 +134,19 @@ describe('Home.vue', () => {
     const { wrapper } = await mountHome();
     await flushPromises();
 
-    // показываем все товары и проверяем что они есть
+    // Показываем все товары и проверяем что они есть
     await wrapper.find('.show-more-btn').trigger('click');
     await nextTick();
     expect(wrapper.findAll('.product-card-stub')).toHaveLength(4);
 
-    // выбираем категорию и проверяем что видимые товары отфильтровались
+    // Выбираем категорию и проверяем что видимые товары отфильтровались
     const categorySelect = wrapper.find('.filter-panel-stub .category-select');
     await categorySelect.setValue('Техника');
     await nextTick();
 
     const items = wrapper.findAll('.product-card-stub');
     expect(items).toHaveLength(2);
-    // техники две, кнопки нет
+    // Техники две, кнопки нет
     expect(wrapper.find('.show-more-btn').exists()).toBe(false);
   });
 
@@ -164,12 +164,12 @@ describe('Home.vue', () => {
     const searchInput = wrapper.find('.search-panel-stub .search-input');
     const categorySelect = wrapper.find('.filter-panel-stub .category-select');
 
-    // проверяем фильтры
+    // Проверяем фильтры
     expect(searchInput.element.value).toBe('Смартфон');
     expect(categorySelect.element.value).toBe('Техника');
-    // смартфон один
+    // Смартфон один
     expect(wrapper.findAll('.product-card-stub')).toHaveLength(1);
-    // кнопки нет
+    // Кнопки нет
     expect(wrapper.find('.show-more-btn').exists()).toBe(false);
   });
 });
