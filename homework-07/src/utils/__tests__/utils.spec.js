@@ -166,6 +166,7 @@ describe('функция checkout', () => {
 
 describe('функция productWordComputing', () => {
   it.each([
+    [null, 'товаров'],
     [1, 'товар'],
     [2, 'товара'],
     [5, 'товаров'],
