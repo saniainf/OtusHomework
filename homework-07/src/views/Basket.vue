@@ -25,15 +25,15 @@
       <div class="basket-summary">
         <div class="summary-row">
           <span class="summary-label">Товаров:</span>
-          <span class="summary-value">{{ itemsCount }}</span>
+          <span class="summary-value items-count-value">{{ itemsCount }}</span>
         </div>
         <div class="summary-row">
           <span class="summary-label">Количество:</span>
-          <span class="summary-value">{{ totalCount }}</span>
+          <span class="summary-value total-count-value">{{ totalCount }}</span>
         </div>
         <div class="summary-row total-row">
           <span class="summary-label">Итого:</span>
-          <span class="summary-value">${{ totalAmount }}</span>
+          <span class="summary-value total-amount-value">${{ totalAmount }}</span>
         </div>
 
         <div class="basket-actions">

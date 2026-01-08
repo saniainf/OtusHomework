@@ -1,7 +1,7 @@
 <template>
   <header class="app-header">
     <div class="app-title">
-      <h1 @click="navigateToHome">Homework-06</h1>
+      <h1 @click="navigateToHome">Homework-07</h1>
     </div>
 
     <div class="header-actions">
