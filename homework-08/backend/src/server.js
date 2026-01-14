@@ -52,6 +52,12 @@ const typeDefs = `#graphql
     total: Float!
   }
 
+  type ProductsPage {
+    items: [Product!]!
+    total: Int!
+    hasMore: Boolean!
+  }
+
   input ProductInput {
     title: String!
     price: Float!
@@ -73,7 +79,7 @@ const typeDefs = `#graphql
   }
 
   type Query {
-    products: [Product!]!
+    products(category: String, limit: Int, offset: Int): ProductsPage!
     product(id: ID!): Product
     cart: Cart!
   }
@@ -94,7 +100,31 @@ const typeDefs = `#graphql
 
 const resolvers = {
   Query: {
-    products: () => products,
+    // Возвращает товары с пагинацией и опциональной фильтрацией по категории
+    products: (_, { category, limit, offset = 0 }) => {
+      // Фильтруем по категории, если параметр передан
+      let filtered = category 
+        ? products.filter((p) => p.category === category)
+        : products;
+      
+      const total = filtered.length;
+      
+      // Применяем пагинацию, если указан limit
+      if (limit !== undefined && limit !== null) {
+        filtered = filtered.slice(offset, offset + limit);
+      }
+      
+      // Проверяем, есть ли еще товары после текущей порции
+      const hasMore = limit !== undefined && limit !== null 
+        ? offset + limit < total
+        : false;
+      
+      return {
+        items: filtered,
+        total,
+        hasMore,
+      };
+    },
     product: (_, { id }) => products.find((p) => String(p.id) === String(id)) ?? null,
     cart: () => ({ items: cartItems }),
   },
