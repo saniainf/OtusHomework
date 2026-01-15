@@ -1,10 +1,9 @@
-import { computed, ref } from 'vue';
+import { computed, ref, shallowRef } from 'vue';
 import { defineStore } from 'pinia';
 import { addToCart, updateCartItem, loadCart } from '../utils/utils.js';
 
 export const useBasketStore = defineStore('basket', () => {
-  // Синхронизированные данные с бэком: массив товаров в корзине
-  const items = ref([]);
+  const items = shallowRef([]);
   // Общая сумма корзины (вычисляется на бэке и возвращается)
   const total = ref(0);
   // Состояние загрузки данных
