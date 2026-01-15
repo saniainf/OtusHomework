@@ -1,6 +1,6 @@
-import { computed, ref, shallowRef } from 'vue';
+import { computed, ref, shallowRef, onUnmounted } from 'vue';
 import { defineStore } from 'pinia';
-import { addToCart, updateCartItem, loadCart } from '../utils/utils.js';
+import { addToCart, updateCartItem, loadCart, subscribeToCartUpdates, recreateWsClient, closeWsConnection } from '../utils/utils.js';
 
 export const useBasketStore = defineStore('basket', () => {
   const items = shallowRef([]);
@@ -8,6 +8,8 @@ export const useBasketStore = defineStore('basket', () => {
   const total = ref(0);
   // Состояние загрузки данных
   const isLoading = ref(false);
+  // Функция отписки от WebSocket событий
+  let unsubscribeFromCart = null;
 
   const totalCount = computed(() => {
     return items.value.reduce((sum, item) => sum + item.quantity, 0);
@@ -20,6 +22,53 @@ export const useBasketStore = defineStore('basket', () => {
   const totalAmount = computed(() => {
     return Number(total.value).toFixed(2);
   });
+
+  /**
+   * Инициализирует WebSocket соединение с токеном авторизации.
+   * Должна вызываться после успешного логина.
+   * @param {string} token - JWT токен пользователя
+   */
+  async function initWebSocket(token) {
+    // Пересоздаём WebSocket клиент с новым токеном и ждём соединения
+    await recreateWsClient(token);
+    // После установки соединения подписываемся на обновления корзины
+    startCartSubscription();
+  }
+
+  /**
+   * Подписывается на обновления корзины через WebSocket.
+   * При получении события обновляет локальное состояние.
+   */
+  function startCartSubscription() {
+    // Сначала отписываемся от предыдущей подписки (если есть)
+    stopCartSubscription();
+    
+    // Подписываемся на обновления корзины
+    unsubscribeFromCart = subscribeToCartUpdates((updatedCart) => {
+      // Обновляем локальное состояние из WebSocket события
+      items.value = updatedCart.items;
+      total.value = updatedCart.total;
+    });
+  }
+
+  /**
+   * Отписывается от WebSocket событий корзины.
+   */
+  function stopCartSubscription() {
+    if (unsubscribeFromCart) {
+      unsubscribeFromCart();
+      unsubscribeFromCart = null;
+    }
+  }
+
+  /**
+   * Закрывает WebSocket соединение и отписывается от событий.
+   * Вызывается при логауте.
+   */
+  function cleanupWebSocket() {
+    stopCartSubscription();
+    closeWsConnection();
+  }
 
   /**
    * Загружает корзину с бэка
@@ -122,6 +171,11 @@ export const useBasketStore = defineStore('basket', () => {
     decrement,
     remove,
     clear,
+    // WebSocket функции
+    initWebSocket,
+    startCartSubscription,
+    stopCartSubscription,
+    cleanupWebSocket,
   };
 });
 

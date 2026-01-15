@@ -1,6 +1,158 @@
+import { createClient } from 'graphql-ws';
+
 // Адреса GraphQL сервера
 const GRAPHQL_HTTP_URL = import.meta.env.VITE_GRAPHQL_HTTP_URL || 'http://localhost:4000/graphql';
 const GRAPHQL_WS_URL = import.meta.env.VITE_GRAPHQL_WS_URL || 'ws://localhost:4000/graphql';
+
+// Переменная для хранения WebSocket клиента
+let wsClient = null;
+// Сохраняем токен для переиспользования при переподключениях
+let savedToken = null;
+// Promise для ожидания готовности соединения
+let connectionReadyPromise = null;
+let connectionReadyResolve = null;
+
+/**
+ * Создаёт или возвращает существующий WebSocket клиент для GraphQL подписок.
+ * @param {string|null} token - JWT токен для авторизации
+ * @returns {Object} WebSocket клиент graphql-ws
+ */
+export function getWsClient(token = null) {
+  if (token) {
+    savedToken = token;
+  }
+
+  if (wsClient) {
+    return wsClient;
+  }
+
+  // Создаём Promise для ожидания готовности соединения
+  connectionReadyPromise = new Promise((resolve) => {
+    connectionReadyResolve = resolve;
+  });
+
+  wsClient = createClient({
+    url: GRAPHQL_WS_URL,
+    connectionParams: () => {
+      if (savedToken) {
+        return { Authorization: `Bearer ${savedToken}` };
+      }
+      return {};
+    },
+    retryAttempts: Infinity,
+    retryWait: async (retries) => {
+      await new Promise((resolve) => setTimeout(resolve, Math.min(1000 * Math.pow(2, retries), 30000)));
+    },
+    lazy: false,
+    keepAlive: 10000,
+    on: {
+      connected: () => {
+        // Разрешаем Promise когда соединение готово
+        if (connectionReadyResolve) {
+          connectionReadyResolve();
+          connectionReadyResolve = null;
+        }
+      },
+      error: (error) => {
+        console.error('WebSocket ошибка:', error);
+      },
+    },
+  });
+
+  return wsClient;
+}
+
+/**
+ * Ожидает готовности WebSocket соединения.
+ * @returns {Promise<void>}
+ */
+export async function waitForConnection() {
+  if (connectionReadyPromise) {
+    await connectionReadyPromise;
+  }
+}
+
+/**
+ * Пересоздаёт WebSocket клиент с новым токеном.
+ * @param {string|null} token - Новый JWT токен
+ * @returns {Promise<Object>} WebSocket клиент после готовности соединения
+ */
+export async function recreateWsClient(token = null) {
+  savedToken = token;
+  
+  if (wsClient) {
+    wsClient.dispose();
+    wsClient = null;
+  }
+
+  const client = getWsClient(token);
+  // Ждём пока соединение установится
+  await waitForConnection();
+  return client;
+}
+
+/**
+ * Закрывает WebSocket соединение.
+ */
+export function closeWsConnection() {
+  savedToken = null;
+  connectionReadyPromise = null;
+  connectionReadyResolve = null;
+  if (wsClient) {
+    wsClient.dispose();
+    wsClient = null;
+  }
+}
+
+/**
+ * Подписывается на обновления корзины через WebSocket.
+ * @param {Function} onCartUpdate - Колбэк при обновлении корзины
+ * @returns {Function} Функция для отписки
+ */
+export function subscribeToCartUpdates(onCartUpdate) {
+  const query = `
+    subscription OnCartUpdated {
+      cartUpdated {
+        items {
+          productId
+          quantity
+          product {
+            id
+            title
+            price
+            image
+            category
+          }
+        }
+        total
+      }
+    }
+  `;
+
+  const client = getWsClient();
+  if (!client) {
+    console.error('WebSocket клиент не создан');
+    return () => {};
+  }
+
+  // Возвращаем функцию отписки от client.subscribe
+  return client.subscribe(
+    { query },
+    {
+      next: (result) => {
+        if (result.data?.cartUpdated) {
+          onCartUpdate(result.data.cartUpdated);
+        }
+      },
+      error: (error) => {
+        console.error('WebSocket подписка ошибка:', error);
+      },
+      complete: () => {
+        // Подписка завершена сервером
+      },
+    }
+  );
+}
 
 /**
  * Отправляет GraphQL запрос через HTTP POST с авторизацией.

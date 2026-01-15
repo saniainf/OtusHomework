@@ -10,7 +10,7 @@ import { ApolloServerPluginDrainHttpServer } from "@apollo/server/plugin/drainHt
 import { makeExecutableSchema } from "@graphql-tools/schema";
 import { WebSocketServer } from "ws";
 import { useServer } from "graphql-ws/use/ws";
-import { PubSub } from "graphql-subscriptions";
+import { PubSub, withFilter } from "graphql-subscriptions";
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const dataPath = path.join(__dirname, "../data.json");
@@ -231,7 +231,8 @@ const resolvers = {
         userCart.items.push({ productId: String(productId), quantity });
       }
       const cart = buildCart(userCart.items);
-      pubsub.publish(CART_UPDATED, { cartUpdated: cart });
+      // Передаём userId вместе с событием для фильтрации на стороне подписки
+      pubsub.publish(CART_UPDATED, { cartUpdated: cart, userId: context.userId });
       return cart;
     },
     updateCartItem: (_, { productId, quantity }, context) => {
@@ -258,19 +259,32 @@ const resolvers = {
         existing.quantity = quantity;
       }
       const cart = buildCart(userCart.items);
-      pubsub.publish(CART_UPDATED, { cartUpdated: cart });
+      // Передаём userId вместе с событием для фильтрации на стороне подписки
+      pubsub.publish(CART_UPDATED, { cartUpdated: cart, userId: context.userId });
       return cart;
     },
   },
   Subscription: {
     productAdded: {
-      subscribe: () => pubsub.asyncIterator([PRODUCT_ADDED]),
+      subscribe: () => pubsub.asyncIterableIterator([PRODUCT_ADDED]),
     },
     productUpdated: {
-      subscribe: () => pubsub.asyncIterator([PRODUCT_UPDATED]),
+      subscribe: () => pubsub.asyncIterableIterator([PRODUCT_UPDATED]),
     },
     cartUpdated: {
-      subscribe: () => pubsub.asyncIterator([CART_UPDATED]),
+      // Подписка на обновления корзины с фильтрацией по userId
+      subscribe: withFilter(
+        () => pubsub.asyncIterableIterator([CART_UPDATED]),
+        (payload, _variables, context) => {
+          // Отправляем событие только владельцу корзины
+          if (!context.userId) {
+            return false;
+          }
+          return String(payload.userId) === String(context.userId);
+        }
+      ),
+      // Резолвер для преобразования payload в ответ
+      resolve: (payload) => payload.cartUpdated,
     },
   },
   Cart: {
@@ -383,7 +397,17 @@ async function startServer() {
     path: "/graphql",
   });
 
-  const serverCleanup = useServer({ schema }, wsServer);
+  // Настраиваем WebSocket сервер с поддержкой аутентификации
+  const serverCleanup = useServer({
+    schema,
+    // Извлекаем userId из параметров подключения для использования в подписках
+    context: async (ctx) => {
+      // connectionParams передаются клиентом при установке WS соединения
+      const authHeader = ctx.connectionParams?.Authorization;
+      const userId = extractUserIdFromToken(authHeader);
+      return { userId };
+    },
+  }, wsServer);
 
   const apolloServer = new ApolloServer({
     schema,

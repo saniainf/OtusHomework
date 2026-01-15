@@ -42,6 +42,8 @@ function handleLogin() {
   login(username.value, password.value)
     .then((response) => {
       authStore.login(username.value, response.token);
+      // Инициализируем WebSocket с новым токеном для получения обновлений корзины
+      basket.initWebSocket(response.token);
       // После успешного логина загружаем корзину пользователя с бэка
       basket.fetchCart();
       router.push({ path: '/' });
