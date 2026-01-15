@@ -3,8 +3,8 @@ const GRAPHQL_HTTP_URL = import.meta.env.VITE_GRAPHQL_HTTP_URL || 'http://localh
 const GRAPHQL_WS_URL = import.meta.env.VITE_GRAPHQL_WS_URL || 'ws://localhost:4000/graphql';
 
 /**
- * Отправляет GraphQL запрос через HTTP POST.
- * Используется для queries и mutations, не требует переподключения для каждого запроса.
+ * Отправляет GraphQL запрос через HTTP POST с авторизацией.
+ * Используется для queries и mutations. Автоматически добавляет Authorization header если пользователь авторизован.
  * @param {string} query - GraphQL запрос или мутация
  * @param {Object} variables - Переменные для запроса (по умолчанию пусто)
  * @returns {Promise<Object>} Ответ от сервера с данными
@@ -12,11 +12,23 @@ const GRAPHQL_WS_URL = import.meta.env.VITE_GRAPHQL_WS_URL || 'ws://localhost:40
  */
 async function graphqlRequest(query, variables = {}) {
   try {
+    // Динамически получаем токен (импортируем здесь чтобы избежать циклических зависимостей)
+    const { useAuthStore } = await import('../stores/authStore.js');
+    const authStore = useAuthStore();
+    
+    // Формируем headers
+    const headers = {
+      'Content-Type': 'application/json',
+    };
+    
+    // Если пользователь авторизован - добавляем токен
+    if (authStore.authData.token) {
+      headers['Authorization'] = `Bearer ${authStore.authData.token}`;
+    }
+    
     const response = await fetch(GRAPHQL_HTTP_URL, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({
         query,
         variables,

@@ -23,8 +23,57 @@ const PRODUCT_UPDATED = "PRODUCT_UPDATED";
 const CART_UPDATED = "CART_UPDATED";
 
 let products = [];
-let cartItems = [];
+// Хранилище корзин для каждого пользователя: Map<userId, { items: [...] }>
+const carts = new Map();
 let categories = [];
+
+/**
+ * Извлекает userId из Authorization header.
+ * Декодирует JWT токен и возвращает значение поля "sub" (subject) из payload.
+ * @param {string} authHeader - Значение Authorization header
+ * @returns {string|null} userId или null если токена нет или формат неверный
+ */
+function extractUserIdFromToken(authHeader) {
+  if (!authHeader) {
+    return null;
+  }
+
+  const parts = authHeader.split(' ');
+  if (parts.length !== 2 || parts[0] !== 'Bearer') {
+    console.warn('Неверный формат Authorization header:', authHeader);
+    return null;
+  }
+
+  const token = parts[1];
+  if (!token) {
+    return null;
+  }
+
+  try {
+    const tokenParts = token.split('.');
+    if (tokenParts.length !== 3) {
+      console.warn('Неверный формат JWT токена');
+      return null;
+    }
+
+    const payload = tokenParts[1];
+    const padded = payload + '='.repeat((4 - payload.length % 4) % 4);
+    const decoded = Buffer.from(padded, 'base64').toString('utf-8');
+    const payloadObj = JSON.parse(decoded);
+
+    // Возвращаем поле "sub" из payload как userId
+    // в fakestoreapi это поле содержит id пользователя
+    if (payloadObj.sub) {
+      return String(payloadObj.sub);
+    }
+
+    console.warn('В JWT токене не найдено поле "sub"');
+    return null;
+  } catch (error) {
+    console.warn('Ошибка при декодировании JWT токена:', error.message);
+    return null;
+  }
+}
 
 const typeDefs = `#graphql
   type Rating {
@@ -130,7 +179,18 @@ const resolvers = {
     product: (_, { id }) => products.find((p) => String(p.id) === String(id)) ?? null,
     // Возвращает список всех уникальных категорий товаров
     categories: () => categories,
-    cart: () => ({ items: cartItems }),
+    // Возвращает корзину текущего пользователя (проверяет userId из context)
+    cart: (_, {}, context) => {
+      if (!context.userId) {
+        throw new Error("Не авторизован. Требуется передать Authorization header.");
+      }
+      // Если корзины еще нет, создаем пустую
+      if (!carts.has(context.userId)) {
+        carts.set(context.userId, { items: [] });
+      }
+      const userCart = carts.get(context.userId);
+      return buildCart(userCart.items);
+    },
   },
   Mutation: {
     addProduct: (_, { input }) => {
@@ -150,35 +210,54 @@ const resolvers = {
       pubsub.publish(PRODUCT_UPDATED, { productUpdated: updated });
       return updated;
     },
-    addToCart: (_, { productId, quantity }) => {
+    addToCart: (_, { productId, quantity }, context) => {
+      // Добавляет товар в корзину конкретного пользователя
+      if (!context.userId) {
+        throw new Error("Не авторизован. Требуется передать Authorization header.");
+      }
       ensureProductExists(productId);
       if (quantity <= 0) {
         throw new Error("Количество должно быть больше нуля");
       }
-      const existing = cartItems.find((item) => String(item.productId) === String(productId));
+      // Если корзины еще нет, создаем пустую
+      if (!carts.has(context.userId)) {
+        carts.set(context.userId, { items: [] });
+      }
+      const userCart = carts.get(context.userId);
+      const existing = userCart.items.find((item) => String(item.productId) === String(productId));
       if (existing) {
         existing.quantity += quantity;
       } else {
-        cartItems.push({ productId: String(productId), quantity });
+        userCart.items.push({ productId: String(productId), quantity });
       }
-      const cart = buildCart();
+      const cart = buildCart(userCart.items);
       pubsub.publish(CART_UPDATED, { cartUpdated: cart });
       return cart;
     },
-    updateCartItem: (_, { productId, quantity }) => {
+    updateCartItem: (_, { productId, quantity }, context) => {
+      // Обновляет количество товара или удаляет его из корзины пользователя
+      if (!context.userId) {
+        throw new Error("Не авторизован. Требуется передать Authorization header.");
+      }
       ensureProductExists(productId);
-      const existing = cartItems.find((item) => String(item.productId) === String(productId));
+      // Если корзины еще нет, создаем пустую
+      if (!carts.has(context.userId)) {
+        carts.set(context.userId, { items: [] });
+      }
+      const userCart = carts.get(context.userId);
+      const existing = userCart.items.find((item) => String(item.productId) === String(productId));
       if (!existing && quantity <= 0) {
-        return buildCart();
+        return buildCart(userCart.items);
       }
       if (!existing) {
-        cartItems.push({ productId: String(productId), quantity });
+        userCart.items.push({ productId: String(productId), quantity });
       } else if (quantity <= 0) {
-        cartItems = cartItems.filter((item) => String(item.productId) !== String(productId));
+        // Удаляем товар из корзины если количество <= 0
+        userCart.items = userCart.items.filter((item) => String(item.productId) !== String(productId));
       } else {
         existing.quantity = quantity;
       }
-      const cart = buildCart();
+      const cart = buildCart(userCart.items);
       pubsub.publish(CART_UPDATED, { cartUpdated: cart });
       return cart;
     },
@@ -273,12 +352,14 @@ function ensureProductExists(productId) {
 }
 
 /**
- * Формирует объект корзины с текущими позициями и суммой.
- * @returns {{ items: Array<{productId: string, quantity: number}>, total: number }} Корзина.
+ * Вычисляет сумму товаров в корзине по переданному массиву items.
+ * Принимает массив items как параметр для работы с корзинами разных пользователей.
+ * @param {Array} items - Массив товаров в корзине
+ * @returns {{ items: Array<{productId: string, quantity: number}>, total: number }} Корзина с суммой.
  */
-function buildCart() {
+function buildCart(items) {
   return {
-    items: cartItems, total: cartItems.reduce((acc, item) => {
+    items: items, total: items.reduce((acc, item) => {
       const product = products.find((p) => String(p.id) === String(item.productId));
       if (!product) {
         return acc;
@@ -326,7 +407,17 @@ async function startServer() {
     "/graphql",
     cors({ origin: FRONTEND_ORIGIN, credentials: true }),
     express.json(),
-    expressMiddleware(apolloServer),
+    expressMiddleware(apolloServer, {
+      context: async ({ req }) => {
+        // Извлекаем userId из Authorization header
+        const authHeader = req.headers.authorization;
+        const userId = extractUserIdFromToken(authHeader);
+
+        return {
+          userId, // Будет доступен как context.userId в resolvers
+        };
+      },
+    }),
   );
 
   app.get("/health", (_req, res) => {

@@ -14,7 +14,7 @@
       <div class="basket-items">
         <BasketProductCard
           v-for="item in items"
-          :key="item.id"
+          :key="item.productId"
           :product="item"
           @increment="basket.add"
           @decrement="basket.decrement"
@@ -46,6 +46,7 @@
 </template>
 
 <script setup>
+import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useBasketStore } from '../stores/basketStore.js';
@@ -54,6 +55,11 @@ import BasketProductCard from '../components/BasketProductCard.vue';
 const router = useRouter();
 const basket = useBasketStore();
 const { items, totalCount, itemsCount, totalAmount } = storeToRefs(basket);
+
+// Загружаем корзину с бэка при открытии страницы
+onMounted(() => {
+  basket.fetchCart();
+});
 
 function clearBasket() {
   basket.clear();
