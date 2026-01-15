@@ -24,6 +24,7 @@ const CART_UPDATED = "CART_UPDATED";
 
 let products = [];
 let cartItems = [];
+let categories = [];
 
 const typeDefs = `#graphql
   type Rating {
@@ -81,6 +82,7 @@ const typeDefs = `#graphql
   type Query {
     products(category: String, limit: Int, offset: Int): ProductsPage!
     product(id: ID!): Product
+    categories: [String!]!
     cart: Cart!
   }
 
@@ -103,22 +105,22 @@ const resolvers = {
     // Возвращает товары с пагинацией и опциональной фильтрацией по категории
     products: (_, { category, limit, offset = 0 }) => {
       // Фильтруем по категории, если параметр передан
-      let filtered = category 
+      let filtered = category
         ? products.filter((p) => p.category === category)
         : products;
-      
+
       const total = filtered.length;
-      
+
       // Применяем пагинацию, если указан limit
       if (limit !== undefined && limit !== null) {
         filtered = filtered.slice(offset, offset + limit);
       }
-      
+
       // Проверяем, есть ли еще товары после текущей порции
-      const hasMore = limit !== undefined && limit !== null 
+      const hasMore = limit !== undefined && limit !== null
         ? offset + limit < total
         : false;
-      
+
       return {
         items: filtered,
         total,
@@ -126,6 +128,8 @@ const resolvers = {
       };
     },
     product: (_, { id }) => products.find((p) => String(p.id) === String(id)) ?? null,
+    // Возвращает список всех уникальных категорий товаров
+    categories: () => categories,
     cart: () => ({ items: cartItems }),
   },
   Mutation: {
@@ -273,17 +277,20 @@ function ensureProductExists(productId) {
  * @returns {{ items: Array<{productId: string, quantity: number}>, total: number }} Корзина.
  */
 function buildCart() {
-  return { items: cartItems, total: cartItems.reduce((acc, item) => {
-    const product = products.find((p) => String(p.id) === String(item.productId));
-    if (!product) {
-      return acc;
-    }
-    return acc + Number(product.price) * item.quantity;
-  }, 0) };
+  return {
+    items: cartItems, total: cartItems.reduce((acc, item) => {
+      const product = products.find((p) => String(p.id) === String(item.productId));
+      if (!product) {
+        return acc;
+      }
+      return acc + Number(product.price) * item.quantity;
+    }, 0)
+  };
 }
 
 async function startServer() {
   products = await loadProducts();
+  categories = Array.from(new Set(products.map((p) => p.category).filter((c) => c)));
 
   const app = express();
   const httpServer = createServer(app);
