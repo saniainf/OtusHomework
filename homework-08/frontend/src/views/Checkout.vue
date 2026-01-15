@@ -62,7 +62,7 @@
 </template>
 
 <script setup>
-import { computed, reactive } from 'vue';
+import { computed, reactive, onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useVuelidate } from '@vuelidate/core';
@@ -73,6 +73,11 @@ import { productWordComputing } from '../utils/utils.js';
 const router = useRouter();
 const basket = useBasketStore();
 const { items, totalCount, itemsCount, totalAmount } = storeToRefs(basket);
+
+// Загружаем корзину с бэка при открытии страницы
+onMounted(() => {
+  basket.fetchCart();
+});
 
 const productWord = computed(() => productWordComputing(items.length));
 

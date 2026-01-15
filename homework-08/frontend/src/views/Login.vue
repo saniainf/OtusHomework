@@ -25,10 +25,12 @@ import { onMounted, ref } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useAuthStore } from '../stores/authStore.js';
+import { useBasketStore } from '../stores/basketStore.js';
 import { login } from '../utils/utils.js';
 
 const router = useRouter();
 const authStore = useAuthStore();
+const basket = useBasketStore();
 
 const username = ref('');
 const password = ref('');
@@ -40,6 +42,10 @@ function handleLogin() {
   login(username.value, password.value)
     .then((response) => {
       authStore.login(username.value, response.token);
+      // Инициализируем WebSocket с новым токеном для получения обновлений корзины
+      basket.initWebSocket(response.token);
+      // После успешного логина загружаем корзину пользователя с бэка
+      basket.fetchCart();
       router.push({ path: '/' });
     })
     .catch((error) => {

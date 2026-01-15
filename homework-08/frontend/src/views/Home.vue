@@ -4,19 +4,33 @@
       <SearchPanel v-model:searchValue="searchValue" />
       <FilterPanel v-model:selectedCategory="selectedCategory" :categories="categories" />
       <div class="filter-count">
-        Найдено: {{ filteredProducts.length }} {{ productWord }}
+        Показано: {{ filteredProducts.length }} из {{ totalProducts }} {{ productWord }}
       </div>
     </div>
     <div class="products-wrapper">
-      <div v-if="filteredProducts.length === 0" class="no-results">
+      <div v-if="error" class="error-message">
+        <p>⚠️ {{ error }}</p>
+      </div>
+      <div v-else-if="filteredProducts.length === 0 && !isLoading" class="no-results">
         <p>Товары не найдены</p>
-        <p>Попробуйте изменить поисковый запрос</p>
+        <p>Попробуйте изменить поисковый запрос или категорию</p>
       </div>
       <template v-else>
-        <div v-for="product in visibleProducts" :key="product.id">
+        <div v-for="product in filteredProducts" :key="product.id">
           <ProductCard :product="product" />
         </div>
-        <button v-if="canShowMore" type="button" class="show-more-btn" @click="showMore">Показать ещё</button>
+        <div v-if="isLoading" class="loading">
+          Загрузка товаров...
+        </div>
+        <button 
+          v-else-if="hasMore" 
+          type="button" 
+          class="show-more-btn" 
+          @click="loadMoreProducts"
+          :disabled="isLoading"
+        >
+          Показать ещё
+        </button>
       </template>
     </div>
   </div>
@@ -25,7 +39,7 @@
 <script setup>
 import { onMounted, ref, computed, shallowRef, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { loadProducts, productWordComputing } from '../utils/utils.js';
+import { loadCategories, loadProducts, productWordComputing } from '../utils/utils.js';
 import ProductCard from '../components/ProductCard.vue';
 import SearchPanel from '../components/SearchPanel.vue';
 import FilterPanel from '../components/FilterPanel.vue';
@@ -33,43 +47,89 @@ import FilterPanel from '../components/FilterPanel.vue';
 const router = useRouter();
 const route = useRoute();
 
-const STEP = 3;
+const LIMIT = 3; // Количество товаров за раз
 
-const products = shallowRef([]);
+// Состояние загруженных товаров
+const allProducts = shallowRef([]); // Все загруженные товары
+const isLoading = ref(false);
+const error = ref(null);
 const categories = shallowRef([]);
 
-const visibleCount = ref(STEP);
+// Состояние пагинации
+const currentOffset = ref(0);
+const totalProducts = ref(0);
+const hasMore = ref(false);
+
+// Фильтры
 const searchValue = ref('');
 const selectedCategory = ref('');
 
-// флаг для отслеживания восстановления состояния из URL
+// Флаг для восстановления состояния из URL
 const isRestoring = ref(true);
 
+/**
+ * Загружает товары с сервера с пагинацией и фильтрацией
+ */
+async function loadMoreProducts() {
+  if (isLoading.value) return;
+  
+  isLoading.value = true;
+  error.value = null;
+
+  try {
+    const data = await loadProducts(
+      LIMIT,
+      currentOffset.value,
+      selectedCategory.value || null
+    );
+
+    if (data.items.length > 0) {
+      allProducts.value.push(...data.items);
+    }
+
+    totalProducts.value = data.total;
+    hasMore.value = data.hasMore;
+    currentOffset.value += LIMIT;
+  } catch (err) {
+    console.error('Ошибка при загрузке товаров:', err);
+    error.value = 'Не удалось загрузить товары';
+  } finally {
+    isLoading.value = false;
+  }
+}
+
+/**
+ * Загружает первую порцию товаров при изменении фильтров
+ */
+async function resetAndLoadProducts() {
+  allProducts.value = [];
+  currentOffset.value = 0;
+  hasMore.value = false;
+  await loadMoreProducts();
+}
+
+/**
+ * Товары после фильтрации по поиску
+ */
 const filteredProducts = computed(() => {
-  if (!searchValue.value.trim() && !selectedCategory.value) {
-    return products.value;
+  if (!searchValue.value.trim()) {
+    return allProducts.value;
   }
 
   const searchLower = searchValue.value.toLowerCase();
-
-  return products.value.filter(product =>
-    product.title.toLowerCase().includes(searchLower) &&
-    (selectedCategory.value ? product.category === selectedCategory.value : true)
+  return allProducts.value.filter(product =>
+    product.title.toLowerCase().includes(searchLower)
   );
 });
 
-const visibleProducts = computed(() =>
-  filteredProducts.value.slice(0, visibleCount.value)
-);
+/**
+ * Склонение слова "товар"
+ */
+const productWord = computed(() => productWordComputing(filteredProducts.value.length));
 
-const canShowMore = computed(() =>
-  visibleCount.value < filteredProducts.value.length
-);
-
-function showMore() {
-  visibleCount.value = Math.min(visibleCount.value + STEP, filteredProducts.value.length);
-}
-
+/**
+ * Обновление параметров URL
+ */
 function updateQueryParams() {
   const query = {};
 
@@ -79,48 +139,45 @@ function updateQueryParams() {
   if (selectedCategory.value) {
     query.category = selectedCategory.value;
   }
-  if (visibleCount.value !== STEP) {
-    query.visible = visibleCount.value;
-  }
 
   router.replace({ query });
 }
 
-watch([searchValue, selectedCategory, visibleCount], (newValues, oldValues) => {
+/**
+ * Слежение за изменением фильтров
+ */
+watch([searchValue, selectedCategory], (newValues, oldValues) => {
+  // Пропускаем если восстанавливаем состояние из URL
   if (isRestoring.value) return;
 
-  const filtersChanged = newValues[0] !== oldValues[0] || newValues[1] !== oldValues[1];
-  if (filtersChanged) {
-    visibleCount.value = Math.min(STEP, filteredProducts.value.length);
+  // Если изменилась категория - перезагружаем с первой порции
+  if (newValues[1] !== oldValues[1]) {
+    resetAndLoadProducts();
   }
 
   updateQueryParams();
 });
 
+/**
+ * При монтировании компонента
+ */
 onMounted(async () => {
-  products.value = await loadProducts();
-  categories.value = [...new Set(products.value.map(product => product.category))];
-
+  // Восстанавливаем фильтры из URL
   if (route.query.search) {
     searchValue.value = route.query.search;
   }
   if (route.query.category) {
     selectedCategory.value = route.query.category;
   }
-  if (route.query.visible) {
-    const parsed = Number.parseInt(route.query.visible, 10);
-    if (Number.isFinite(parsed) && parsed > 0) {
-      visibleCount.value = parsed;
-    }
-  }
 
-  // ожидание следующего тика
-  // и потом установка флага восстановления
+  // Загружаем первую порцию товаров и категории
+  await loadMoreProducts();
+  categories.value = await loadCategories();
+
+  // Даём Vue время на обновление и затем отключаем режим восстановления
   await nextTick();
   isRestoring.value = false;
 });
-
-const productWord = computed(() => productWordComputing(filteredProducts.value.length));
 
 </script>
 
@@ -169,6 +226,23 @@ h1 {
   color: gray
 }
 
+.error-message {
+  background-color: #fee;
+  border: 1px solid #f99;
+  border-radius: 6px;
+  padding: 1rem;
+  color: #c33;
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.loading {
+  text-align: center;
+  color: #666;
+  padding: 1rem;
+  font-style: italic;
+}
+
 .show-more-btn {
   padding: 1rem;
   font-size: 1rem;
@@ -182,6 +256,11 @@ h1 {
 
 .show-more-btn:hover {
   background-color: #36a372;
+}
+
+.show-more-btn:disabled {
+  background-color: #ccc;
+  cursor: not-allowed;
 }
 
 .filter-count {

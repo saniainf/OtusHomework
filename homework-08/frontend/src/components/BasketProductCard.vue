@@ -1,21 +1,21 @@
 <template>
   <div class="container">
     <div class="image-container">
-      <img :src="product.image" :alt="product.title" class="image" />
+      <img :src="product.product.image" :alt="product.product.title" class="image" />
     </div>
 
     <div class="info">
-      <h3 class="title" @click="navigateToDetails">{{ product.title }}</h3>
-      <p class="price">${{ product.price.toFixed(2) }}</p>
+      <h3 class="title" @click="navigateToDetails">{{ product.product.title }}</h3>
+      <p class="price">${{ product.product.price.toFixed(2) }}</p>
     </div>
 
     <div class="controls">
       <div class="quantity-control">
-        <button @click="$emit('decrement', product.id)" class="qty-btn">−</button>
-        <span class="qty-value">{{ product.qty }}</span>
-        <button @click="$emit('increment', product)" class="qty-btn">+</button>
+        <button @click="$emit('decrement', product.productId)" class="qty-btn">−</button>
+        <span class="qty-value">{{ product.quantity }}</span>
+        <button @click="$emit('increment', product.product)" class="qty-btn">+</button>
       </div>
-      <button @click="$emit('remove', product.id)" class="remove-btn">
+      <button @click="$emit('remove', product.productId)" class="remove-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
         </svg>
@@ -23,7 +23,7 @@
     </div>
 
     <div class="subtotal">
-      ${{ (product.price * product.qty).toFixed(2) }}
+      ${{ (product.product.price * product.quantity).toFixed(2) }}
     </div>
   </div>
 </template>
@@ -44,7 +44,7 @@ defineEmits(['increment', 'decrement', 'remove']);
 
 function navigateToDetails() {
   router.push({
-    path: `/product/${product.id}`
+    path: `/product/${product.product.id}`
   });
 }
 </script>
