@@ -10,7 +10,7 @@
         <span class="login-label">{{ userName }}</span>
         <button class="login-btn" @click="auth.logout()">Выйти</button>
       </div>
-      <div class="basket-icon" @click="navigateToBasket">
+      <div v-if="isLoggedIn && totalCount > 0" class="basket-icon" @click="navigateToBasket">
         <svg xmlns="http://www.w3.org/2000/svg" width="32" height="32" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
           <circle cx="9" cy="21" r="1"></circle>
           <circle cx="20" cy="21" r="1"></circle>

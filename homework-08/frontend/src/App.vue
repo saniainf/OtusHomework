@@ -1,14 +1,15 @@
 <script setup>
-import { onMounted } from 'vue';
+import { onMounted, watch } from 'vue';
 import { RouterView } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import AppHeader from './components/AppHeader.vue';
 import { useBasketStore } from './stores/basketStore.js';
 import { useAuthStore } from './stores/authStore.js';
 
 const basket = useBasketStore();
 const auth = useAuthStore();
+const { isLoggedIn } = storeToRefs(auth);
 
-// Загружаем корзину с бэка при старте приложения если пользователь авторизован
 onMounted(() => {
   if (auth.isLoggedIn) {
     basket.fetchCart();
