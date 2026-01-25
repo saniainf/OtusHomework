@@ -14,7 +14,7 @@
       </div>
       <div class="product-footer">
         <span class="product-price">${{ product.price.toFixed(2) }}</span>
-        <button @click="addToBasket" class="add-to-basket-btn">Добавить в корзину</button>
+        <button v-if="isLoggedIn" @click="addToBasket" class="add-to-basket-btn">Добавить в корзину</button>
       </div>
     </div>
   </article>
@@ -23,11 +23,15 @@
 <script setup>
 import { computed } from 'vue';
 import { useRouter } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { useBasketStore } from '../stores/basketStore.js';
 import { toStarsHTML } from '../utils/utils.js';
+import { useAuthStore } from '../stores/authStore.js';
 
 const router = useRouter();
 const basket = useBasketStore();
+const auth = useAuthStore();
+const { isLoggedIn } = storeToRefs(auth);
 
 const { product } = defineProps({
   product: {

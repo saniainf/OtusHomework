@@ -19,7 +19,7 @@
 
         <div class="product-footer">
           <button @click="navigateToBack" class="footer-btn back-btn">Назад</button>
-          <button @click="addToBasket" class="footer-btn add-to-basket-btn">Добавить в корзину</button>
+          <button v-if="isLoggedIn" @click="addToBasket" class="footer-btn add-to-basket-btn">Добавить в корзину</button>
         </div>
       </div>
     </div>
@@ -29,12 +29,16 @@
 <script setup>
 import { onMounted, shallowRef } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '../stores/authStore.js';
 import { useBasketStore } from '../stores/basketStore.js';
 import { loadProduct } from '../utils/utils.js';
 
 const router = useRouter();
 const route = useRoute();
 const basket = useBasketStore();
+const auth = useAuthStore();
+const { isLoggedIn } = storeToRefs(auth);
 const productId = route.params.id;
 
 const product = shallowRef({});
