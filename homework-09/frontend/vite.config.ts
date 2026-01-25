@@ -17,7 +17,7 @@ export default defineConfig({
   },
   server: {
     watch: {
-      ignored:['**/playwright-report/*']
+      ignored: ['**/playwright-report/*']
     }
   },
 })

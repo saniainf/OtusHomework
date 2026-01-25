@@ -22,10 +22,10 @@
         <div v-if="isLoading" class="loading">
           Загрузка товаров...
         </div>
-        <button 
-          v-else-if="hasMore" 
-          type="button" 
-          class="show-more-btn" 
+        <button
+          v-else-if="hasMore"
+          type="button"
+          class="show-more-btn"
           @click="loadMoreProducts"
           :disabled="isLoading"
         >
@@ -36,7 +36,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted, ref, computed, shallowRef, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
 import { loadCategories, loadProducts, productWordComputing } from '../utils/utils.js';
@@ -72,7 +72,7 @@ const isRestoring = ref(true);
  */
 async function loadMoreProducts() {
   if (isLoading.value) return;
-  
+
   isLoading.value = true;
   error.value = null;
 

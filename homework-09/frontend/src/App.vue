@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, watch, onUnmounted } from 'vue';
 import { RouterView } from 'vue-router';
 import { storeToRefs } from 'pinia';
