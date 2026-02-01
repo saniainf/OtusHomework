@@ -3,51 +3,58 @@
     <div class="container">
       <header class="header">
         <h2 class="title">
-          {{ product.title }}
+          {{ product?.title }}
         </h2>
       </header>
 
       <div class="body">
         <div class="content">
-          <img :src="product.image" :alt="product.title" class="product-image" />
-          <p class="product-description">{{ product.description }}</p>
+          <img :src="product?.image" :alt="product?.title" class="product-image" />
+          <p class="product-description">{{ product?.description }}</p>
           <div class="product-info">
-            <span class="product-category">{{ product.category }}</span>
-            <span class="product-price">${{ product.price?.toFixed(2) }}</span>
+            <span class="product-category">{{ product?.category }}</span>
+            <span class="product-price">${{ product?.price?.toFixed(2) }}</span>
           </div>
         </div>
 
         <div class="product-footer">
           <button @click="navigateToBack" class="footer-btn back-btn">Назад</button>
-          <button @click="addToBasket" class="footer-btn add-to-basket-btn">Добавить в корзину</button>
+          <button v-if="isLoggedIn && product" @click="addToBasket" class="footer-btn add-to-basket-btn">Добавить в корзину</button>
         </div>
       </div>
     </div>
   </div>
 </template>
 
-<script setup>
-import { onMounted, shallowRef } from 'vue';
-import { useRouter, useRoute } from 'vue-router';
+<script setup lang="ts">
+import { onMounted, shallowRef, type ShallowRef } from 'vue';
+import { useRouter, useRoute, type Router, type RouteLocationNormalizedLoaded } from 'vue-router';
+import { storeToRefs } from 'pinia';
+import { useAuthStore } from '../stores/authStore.js';
 import { useBasketStore } from '../stores/basketStore.js';
 import { loadProduct } from '../utils/utils.js';
+import type { Product } from '../types/index.ts';
 
-const router = useRouter();
-const route = useRoute();
+const router: Router = useRouter();
+const route: RouteLocationNormalizedLoaded = useRoute();
 const basket = useBasketStore();
-const productId = route.params.id;
+const auth = useAuthStore();
+const { isLoggedIn } = storeToRefs(auth);
+const productId: string = route.params.id as string;
 
-const product = shallowRef({});
+const product: ShallowRef<Product | null> = shallowRef<Product | null>(null);
 
-onMounted(async () => {
+onMounted(async (): Promise<void> => {
   product.value = await loadProduct(productId);
 });
 
-function addToBasket() {
-  basket.add(product.value);
+function addToBasket(): void {
+  if (product.value) {
+    basket.add(product.value);
+  }
 }
 
-function navigateToBack() {
+function navigateToBack(): void {
   router.back();
 }
 

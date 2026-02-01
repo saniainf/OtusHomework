@@ -10,26 +10,30 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
+import type { ComputedRef } from 'vue';
 
-const { searchValue } = defineProps({
-  searchValue: {
-    type: String,
-    default: ''
-  },
-});
+const { searchValue } = defineProps<{
+  /** Текущее значение поиска */
+  searchValue: string;
+}>();
 
-const emit = defineEmits(['update:searchValue']);
+const emit = defineEmits<{
+  /** Событие обновления значения поиска */
+  'update:searchValue': [value: string];
+}>();
 
-const searchLocalValue = computed({
-  get: () => searchValue,
-  set: (val) => {
-    emit('update:searchValue', val)
+const searchLocalValue: ComputedRef<string> = computed({
+  get: (): string => searchValue,
+  set: (val: string): void => {
+    // Используем сохранённую emit функцию для излучения события обновления
+    emit('update:searchValue', val);
   }
 });
 
-function clear() {
+function clear(): void {
+  // Используем сохранённую emit функцию для излучения события с пустым значением
   emit('update:searchValue', '');
 }
 

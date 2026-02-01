@@ -1,0 +1,15 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+    "type": "node",
+    "request": "launch",
+    "name": "Debug npm run dev",
+    "runtimeExecutable": "npm",
+    "runtimeArgs": ["run", "dev"],
+    "cwd": "${workspaceFolder}/homework-09/backend",
+    "skipFiles": ["<node_internals>/**"],
+    "sourceMaps": true
+    }
+  ]
+}

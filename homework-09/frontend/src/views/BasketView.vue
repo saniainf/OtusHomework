@@ -45,7 +45,7 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { onMounted } from 'vue';
 import { useRouter } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -61,16 +61,16 @@ onMounted(() => {
   basket.fetchCart();
 });
 
-function clearBasket() {
+function clearBasket(): void {
   basket.clear();
   navigateToBack();
 }
 
-function navigateToBack() {
+function navigateToBack(): void {
   router.back();
 }
 
-function navigateToCheckout() {
+function navigateToCheckout(): void {
   router.push({ path: '/checkout' });
 }
 </script>

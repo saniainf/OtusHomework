@@ -1,4 +1,4 @@
-<script setup>
+<script setup lang="ts">
 import { onMounted, watch, onUnmounted } from 'vue';
 import { RouterView } from 'vue-router';
 import { storeToRefs } from 'pinia';
@@ -11,7 +11,7 @@ const auth = useAuthStore();
 const { isLoggedIn } = storeToRefs(auth);
 
 // При монтировании проверяем авторизацию и инициализируем WebSocket
-onMounted(() => {
+onMounted((): void => {
   if (auth.isLoggedIn) {
     // Инициализируем WebSocket с токеном и загружаем корзину
     basket.initWebSocket(auth.authData.token);
@@ -20,7 +20,7 @@ onMounted(() => {
 });
 
 // Следим за изменением статуса авторизации
-watch(isLoggedIn, (newValue) => {
+watch(isLoggedIn, (newValue: boolean) => {
   if (newValue) {
     // Пользователь залогинился — инициализируем WebSocket и загружаем корзину
     basket.initWebSocket(auth.authData.token);

@@ -14,46 +14,65 @@
       </div>
       <div class="product-footer">
         <span class="product-price">${{ product.price.toFixed(2) }}</span>
-        <button @click="addToBasket" class="add-to-basket-btn">Добавить в корзину</button>
+        <button v-if="isLoggedIn" @click="addToBasket" class="add-to-basket-btn">Добавить в корзину</button>
       </div>
     </div>
   </article>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { computed } from 'vue';
+import type { ComputedRef } from 'vue';
 import { useRouter } from 'vue-router';
+import type { Router } from 'vue-router';
+import { storeToRefs } from 'pinia';
 import { useBasketStore } from '../stores/basketStore.js';
 import { toStarsHTML } from '../utils/utils.js';
+import { useAuthStore } from '../stores/authStore.js';
+import type { Product } from '../types/index.js';
 
-const router = useRouter();
+const router: Router = useRouter();
 const basket = useBasketStore();
+const auth = useAuthStore();
+const { isLoggedIn } = storeToRefs(auth);
 
-const { product } = defineProps({
-  product: {
-    type: Object,
-    required: true,
-    validator(value) {
-      return value && typeof value === 'object' && value.id != null;
-    }
-  }
-});
+// Определяем props с явной типизацией Product
+const { product } = defineProps<{
+  /** Данные товара для отображения в карточке */
+  product: Product;
+}>();
 
-function navigateToDetails() {
+/**
+ * Навигирует на страницу детального просмотра товара
+ */
+function navigateToDetails(): void {
   router.push({
     path: `/product/${product.id}`
   });
 }
 
-function addToBasket() {
+/**
+ * Добавляет товар в корзину пользователя
+ */
+function addToBasket(): void {
   basket.add(product);
 }
 
-const ratingText = computed(() => {
+/**
+ * Вычисляемое свойство для отображения рейтинга товара
+ * Возвращает строку вида "4.5 (120 отзывов)"
+ */
+const ratingText: ComputedRef<string> = computed((): string => {
   return `${product.rating.rate} (${product.rating.count} отзывов)`;
 });
 
-const stars = computed(() => toStarsHTML(Math.round(product.rating.rate), 5));
+/**
+ * Вычисляемое свойство для отображения звёзд рейтинга
+ * Возвращает HTML строку со звёздами на основе рейтинга товара
+ */
+const stars: ComputedRef<string> = computed((): string => {
+  return toStarsHTML(Math.round(product.rating.rate || 0), 5);
+});
 </script>
 
 <style scoped>

@@ -1,5 +1,5 @@
 <template>
-  <div class="container">
+  <div v-if="product.product" class="container">
     <div class="image-container">
       <img :src="product.product.image" :alt="product.product.title" class="image" />
     </div>
@@ -11,11 +11,11 @@
 
     <div class="controls">
       <div class="quantity-control">
-        <button @click="$emit('decrement', product.productId)" class="qty-btn">−</button>
+        <button @click="$emit('decrement', product.product.id)" class="qty-btn">−</button>
         <span class="qty-value">{{ product.quantity }}</span>
         <button @click="$emit('increment', product.product)" class="qty-btn">+</button>
       </div>
-      <button @click="$emit('remove', product.productId)" class="remove-btn">
+      <button @click="$emit('remove', product.product.id)" class="remove-btn">
         <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
           <path d="M3 6h18M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path>
         </svg>
@@ -28,23 +28,30 @@
   </div>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { useRouter } from 'vue-router';
+import type { Router } from 'vue-router';
+import type { CartItem, Product } from '../types/index.js';
 
-const router = useRouter();
+const router: Router = useRouter();
 
-const { product } = defineProps({
-  product: {
-    type: Object,
-    required: true
-  }
-});
+const { product } = defineProps<{ product: CartItem }>();
 
-defineEmits(['increment', 'decrement', 'remove']);
+defineEmits<{
+  /** Событие увеличения количества товара */
+  increment: [product: Product];
+  /** Событие уменьшения количества товара */
+  decrement: [productId: string];
+  /** Событие удаления товара из корзины */
+  remove: [productId: string];
+}>();
 
-function navigateToDetails() {
+/**
+ * Переходит на страницу детального просмотра товара
+ */
+function navigateToDetails(): void {
   router.push({
-    path: `/product/${product.product.id}`
+    path: `/product/${product.product?.id}`
   });
 }
 </script>

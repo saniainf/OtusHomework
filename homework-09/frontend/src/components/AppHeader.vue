@@ -6,7 +6,7 @@
 
     <div class="header-actions">
       <button v-if="!isLoggedIn && !isLoggedInPage" class="login-btn" @click="navigateToLogin">Войти</button>
-      <div v-else v-if="!isLoggedInPage">
+      <div v-else-if="!isLoggedInPage">
         <span class="login-label">{{ userName }}</span>
         <button class="login-btn" @click="auth.logout()">Выйти</button>
       </div>
@@ -22,22 +22,22 @@
   </header>
 </template>
 
-<script setup>
-import { computed } from 'vue';
-import { useRouter } from 'vue-router';
+<script setup lang="ts">
+import { computed, type ComputedRef } from 'vue';
+import { useRouter, type Router } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useBasketStore } from '../stores/basketStore.js';
 import { useAuthStore } from '../stores/authStore.js';
 
-const router = useRouter();
+const router: Router = useRouter();
 const basket = useBasketStore();
 const auth = useAuthStore();
 const { totalCount } = storeToRefs(basket);
 const { isLoggedIn, userName } = storeToRefs(auth);
 
-const isLoggedInPage = computed(() => router.currentRoute.value.path === '/login');
+const isLoggedInPage: ComputedRef<boolean> = computed((): boolean => router.currentRoute.value.path === '/login');
 
-function navigateToBasket() {
+function navigateToBasket(): void {
   if (basket.totalCount === 0) {
     return;
   }
@@ -45,11 +45,11 @@ function navigateToBasket() {
   router.push('/basket');
 }
 
-function navigateToHome() {
+function navigateToHome(): void {
   router.push('/');
 }
 
-function navigateToLogin() {
+function navigateToLogin(): void {
   router.push('/login');
 }
 </script>

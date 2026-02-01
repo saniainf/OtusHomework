@@ -10,14 +10,14 @@ export const useAuthStore = defineStore('auth', () => {
     token: '',
   });
 
-  const userName = computed(() => authData.value.name);
-  const isLoggedIn = computed(() => authData.value.token);
+  const userName = computed<string>(() => authData.value.name);
+  const isLoggedIn = computed<boolean>(() => !!authData.value.token);
 
-  function login(name, token) {
+  function login(name: string, token: string): void {
     authData.value = { name, token };
   }
 
-  function logout() {
+  function logout(): void {
     authData.value = {
       name: '',
       token: '',

@@ -3,7 +3,7 @@ node_modules/
 
 # IDE/Editor files
 .idea/
-.vscode/
+# .vscode/
 *.suo
 *.ntvs*
 *.njsproj
