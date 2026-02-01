@@ -1,23 +1,24 @@
-import { createClient } from 'graphql-ws';
+import { createClient, type Client } from 'graphql-ws';
+import type { ProductsPage, Product, Cart, LoginResponse, CheckoutData, OrderData } from '../types';
 
 // Адреса GraphQL сервера
 const GRAPHQL_HTTP_URL = import.meta.env.VITE_GRAPHQL_HTTP_URL || 'http://localhost:4000/graphql';
 const GRAPHQL_WS_URL = import.meta.env.VITE_GRAPHQL_WS_URL || 'ws://localhost:4000/graphql';
 
 // Переменная для хранения WebSocket клиента
-let wsClient = null;
+let wsClient: Client | null = null;
 // Сохраняем токен для переиспользования при переподключениях
-let savedToken = null;
+let savedToken: string | null = null;
 // Promise для ожидания готовности соединения
-let connectionReadyPromise = null;
-let connectionReadyResolve = null;
+let connectionReadyPromise: Promise<void> | null = null;
+let connectionReadyResolve: (() => void) | null = null;
 
 /**
  * Создаёт или возвращает существующий WebSocket клиент для GraphQL подписок.
- * @param {string|null} token - JWT токен для авторизации
- * @returns {Object} WebSocket клиент graphql-ws
+ * @param token JWT токен для авторизации
+ * @returns WebSocket клиент graphql-ws
  */
-export function getWsClient(token = null) {
+export function getWsClient(token: string | null = null): Client {
   if (token) {
     savedToken = token;
   }
@@ -64,9 +65,8 @@ export function getWsClient(token = null) {
 
 /**
  * Ожидает готовности WebSocket соединения.
- * @returns {Promise<void>}
  */
-export async function waitForConnection() {
+export async function waitForConnection(): Promise<void> {
   if (connectionReadyPromise) {
     await connectionReadyPromise;
   }
@@ -74,12 +74,12 @@ export async function waitForConnection() {
 
 /**
  * Пересоздаёт WebSocket клиент с новым токеном.
- * @param {string|null} token - Новый JWT токен
- * @returns {Promise<Object>} WebSocket клиент после готовности соединения
+ * @param token Новый JWT токен
+ * @returns WebSocket клиент после готовности соединения
  */
-export async function recreateWsClient(token = null) {
+export async function recreateWsClient(token: string | null = null): Promise<Client> {
   savedToken = token;
-  
+
   if (wsClient) {
     wsClient.dispose();
     wsClient = null;
@@ -94,7 +94,7 @@ export async function recreateWsClient(token = null) {
 /**
  * Закрывает WebSocket соединение.
  */
-export function closeWsConnection() {
+export function closeWsConnection(): void {
   savedToken = null;
   connectionReadyPromise = null;
   connectionReadyResolve = null;
@@ -106,10 +106,10 @@ export function closeWsConnection() {
 
 /**
  * Подписывается на обновления корзины через WebSocket.
- * @param {Function} onCartUpdate - Колбэк при обновлении корзины
- * @returns {Function} Функция для отписки
+ * @param onCartUpdate Колбэк при обновлении корзины
+ * @returns Функция для отписки
  */
-export function subscribeToCartUpdates(onCartUpdate) {
+export function subscribeToCartUpdates(onCartUpdate: (cart: Cart) => void): (() => void) {
   const query = `
     subscription OnCartUpdated {
       cartUpdated {
@@ -139,9 +139,10 @@ export function subscribeToCartUpdates(onCartUpdate) {
   return client.subscribe(
     { query },
     {
-      next: (result) => {
-        if (result.data?.cartUpdated) {
-          onCartUpdate(result.data.cartUpdated);
+      next: (result: unknown) => {
+        const typedResult = result as { data?: { cartUpdated?: Cart } };
+        if (typedResult.data?.cartUpdated) {
+          onCartUpdate(typedResult.data.cartUpdated);
         }
       },
       error: (error) => {
@@ -157,27 +158,27 @@ export function subscribeToCartUpdates(onCartUpdate) {
 /**
  * Отправляет GraphQL запрос через HTTP POST с авторизацией.
  * Используется для queries и mutations. Автоматически добавляет Authorization header если пользователь авторизован.
- * @param {string} query - GraphQL запрос или мутация
- * @param {Object} variables - Переменные для запроса (по умолчанию пусто)
- * @returns {Promise<Object>} Ответ от сервера с данными
- * @throws {Error} Если возникла ошибка при выполнении запроса или GraphQL вернул ошибку
+ * @param query GraphQL запрос или мутация
+ * @param variables Переменные для запроса (по умолчанию пусто)
+ * @returns Ответ от сервера с данными
+ * @throws Если возникла ошибка при выполнении запроса или GraphQL вернул ошибку
  */
-async function graphqlRequest(query, variables = {}) {
+async function graphqlRequest(query: string, variables: Record<string, unknown> = {}): Promise<unknown> {
   try {
     // Динамически получаем токен (импортируем здесь чтобы избежать циклических зависимостей)
     const { useAuthStore } = await import('../stores/authStore.js');
     const authStore = useAuthStore();
-    
+
     // Формируем headers
-    const headers = {
+    const headers: Record<string, string> = {
       'Content-Type': 'application/json',
     };
-    
+
     // Если пользователь авторизован - добавляем токен
     if (authStore.authData.token) {
       headers['Authorization'] = `Bearer ${authStore.authData.token}`;
     }
-    
+
     const response = await fetch(GRAPHQL_HTTP_URL, {
       method: 'POST',
       headers,
@@ -208,12 +209,12 @@ async function graphqlRequest(query, variables = {}) {
 
 /**
  * Загружает товары с пагинацией и опциональной фильтрацией по категории
- * @param {number} limit - Количество товаров на странице
- * @param {number} offset - Смещение от начала
- * @param {string|null} category - Фильтр по категории (опционально)
- * @returns {Promise<Object>} Объект с товарами, всего товаров и флаг hasMore
+ * @param limit Количество товаров на странице
+ * @param offset Смещение от начала
+ * @param category Фильтр по категории (опционально)
+ * @returns Объект с товарами, всего товаров и флаг hasMore
  */
-export async function loadProducts(limit = 3, offset = 0, category = null) {
+export async function loadProducts(limit: number = 3, offset: number = 0, category: string | null = null): Promise<ProductsPage> {
   const query = `
     query GetProducts($limit: Int, $offset: Int, $category: String) {
       products(limit: $limit, offset: $offset, category: $category) {
@@ -242,7 +243,7 @@ export async function loadProducts(limit = 3, offset = 0, category = null) {
   };
 
   try {
-    const data = await graphqlRequest(query, variables);
+    const data = await graphqlRequest(query, variables) as { products: ProductsPage };
     return data.products;
   } catch (error) {
     console.error('Не удалось получить список товаров', error);
@@ -256,10 +257,10 @@ export async function loadProducts(limit = 3, offset = 0, category = null) {
 
 /**
  * Загружает один товар по ID
- * @param {string} id - ID товара
- * @returns {Promise<Object|null>} Объект товара или null если ошибка
+ * @param id ID товара
+ * @returns Объект товара или null если ошибка
  */
-export async function loadProduct(id) {
+export async function loadProduct(id: string): Promise<Product | null> {
   const query = `
     query GetProduct($id: ID!) {
       product(id: $id) {
@@ -280,7 +281,7 @@ export async function loadProduct(id) {
   const variables = { id };
 
   try {
-    const data = await graphqlRequest(query, variables);
+    const data = await graphqlRequest(query, variables) as { product: Product | null };
     return data.product;
   } catch (error) {
     console.error('Не удалось получить товар', error);
@@ -290,9 +291,9 @@ export async function loadProduct(id) {
 
 /**
  * Загружает список всех категорий товаров
- * @returns {Promise<Array<string>>} Массив категорий
+ * @returns Массив категорий
  */
-export async function loadCategories() {
+export async function loadCategories(): Promise<string[]> {
   const query = `
     query GetCategories {
       categories
@@ -300,7 +301,7 @@ export async function loadCategories() {
   `;
 
   try {
-    const data = await graphqlRequest(query);
+    const data = await graphqlRequest(query) as { categories: string[] };
     return data.categories;
   } catch (error) {
     console.error('Не удалось получить список категорий', error);
@@ -310,9 +311,9 @@ export async function loadCategories() {
 
 /**
  * Загружает корзину
- * @returns {Promise<Object>} Объект с товарами, всего и итоговой суммой
+ * @returns Объект с товарами и итоговой суммой
  */
-export async function loadCart() {
+export async function loadCart(): Promise<Cart> {
   const query = `
     query GetCart {
       cart {
@@ -333,7 +334,7 @@ export async function loadCart() {
   `;
 
   try {
-    const data = await graphqlRequest(query);
+    const data = await graphqlRequest(query) as { cart: Cart };
     return data.cart;
   } catch (error) {
     console.error('Не удалось получить корзину', error);
@@ -346,11 +347,11 @@ export async function loadCart() {
 
 /**
  * Добавляет товар в корзину
- * @param {string} productId - ID товара
- * @param {number} quantity - Количество товара (по умолчанию 1)
- * @returns {Promise<Object>} Обновленная корзина
+ * @param productId ID товара
+ * @param quantity Количество товара (по умолчанию 1)
+ * @returns Обновленная корзина
  */
-export async function addToCart(productId, quantity = 1) {
+export async function addToCart(productId: string, quantity: number = 1): Promise<Cart> {
   const query = `
     mutation AddToCart($productId: ID!, $quantity: Int) {
       addToCart(productId: $productId, quantity: $quantity) {
@@ -375,7 +376,7 @@ export async function addToCart(productId, quantity = 1) {
   };
 
   try {
-    const data = await graphqlRequest(query, variables);
+    const data = await graphqlRequest(query, variables) as { addToCart: Cart };
     return data.addToCart;
   } catch (error) {
     console.error('Не удалось добавить товар в корзину', error);
@@ -385,11 +386,11 @@ export async function addToCart(productId, quantity = 1) {
 
 /**
  * Обновляет количество товара в корзине
- * @param {string} productId - ID товара
- * @param {number} quantity - Новое количество (если 0 или меньше - товар удаляется)
- * @returns {Promise<Object>} Обновленная корзина
+ * @param productId ID товара
+ * @param quantity Новое количество (если 0 или меньше - товар удаляется)
+ * @returns Обновленная корзина
  */
-export async function updateCartItem(productId, quantity) {
+export async function updateCartItem(productId: string, quantity: number): Promise<Cart> {
   const query = `
     mutation UpdateCartItem($productId: ID!, $quantity: Int!) {
       updateCartItem(productId: $productId, quantity: $quantity) {
@@ -414,7 +415,7 @@ export async function updateCartItem(productId, quantity) {
   };
 
   try {
-    const data = await graphqlRequest(query, variables);
+    const data = await graphqlRequest(query, variables) as { updateCartItem: Cart };
     return data.updateCartItem;
   } catch (error) {
     console.error('Не удалось обновить товар в корзине', error);
@@ -424,8 +425,11 @@ export async function updateCartItem(productId, quantity) {
 
 /**
  * Пока вход оставляем с fakestore (можно позже добавить в GraphQL)
+ * @param username Имя пользователя
+ * @param password Пароль
+ * @returns Токен или null при ошибке
  */
-export async function login(username, password) {
+export async function login(username: string, password: string): Promise<LoginResponse | null> {
   try {
     const credentials = { username: username, password: password };
     const response = await fetch('https://fakestoreapi.com/auth/login', {
@@ -447,14 +451,14 @@ export async function login(username, password) {
 
 /**
  * Пока отправка заказа остается на httpbin (можно позже добавить в GraphQL)
- * @param {Array} items - Массив товаров в корзине
- * @param {Object} data - Данные формы (имя, email, адрес)
- * @returns {Promise<Object>} Ответ от сервера
+ * @param items Массив товаров в корзине
+ * @param data Данные формы (имя, email, адрес)
+ * @returns Ответ от сервера
  */
-export async function checkout(items, data) {
+export async function checkout(items: Product[], data: CheckoutData): Promise<unknown> {
   try {
-    const orderData = {
-      items: items.map(item => ({
+    const orderData: OrderData = {
+      items: items.map((item: Product) => ({
         id: item.id,
       })),
       customer: data,
@@ -481,7 +485,13 @@ export async function checkout(items, data) {
   }
 }
 
-export function toStarsHTML(num, total = 5) {
+/**
+ * Преобразует число в HTML с звёздами рейтинга.
+ * @param num Количество заполненных звёзд
+ * @param total Общее количество звёзд
+ * @returns HTML строка со звёздами
+ */
+export function toStarsHTML(num: number, total: number = 5): string {
   return Array.from({ length: total }, (_, i) =>
     `<span class="star">${i < num ? '★' : '☆'}</span>`
   ).join('')
@@ -489,8 +499,10 @@ export function toStarsHTML(num, total = 5) {
 
 /**
  * Правильное склонение слова "товар"
+ * @param count Количество товаров
+ * @returns Правильно склоненное слово
  */
-export function productWordComputing(count) {
+export function productWordComputing(count: number | null): string {
   if (count === null) return 'товаров';
 
   const lastDigit = count % 10;

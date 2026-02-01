@@ -63,38 +63,39 @@
 
 <script setup lang="ts">
 import { computed, reactive, onMounted } from 'vue';
-import { useRouter } from 'vue-router';
+import { useRouter, type Router } from 'vue-router';
 import { storeToRefs } from 'pinia';
 import { useVuelidate } from '@vuelidate/core';
 import { required, email, minLength, helpers } from '@vuelidate/validators';
 import { useBasketStore } from '../stores/basketStore.js';
 import { productWordComputing } from '../utils/utils.js';
+import type { CheckoutData } from '../types';
 
-const router = useRouter();
+const router: Router = useRouter();
 const basket = useBasketStore();
-const { items, totalCount, itemsCount, totalAmount } = storeToRefs(basket);
+const { items, totalCount, totalAmount } = storeToRefs(basket);
 
 // Загружаем корзину с бэка при открытии страницы
 onMounted(() => {
   basket.fetchCart();
 });
 
-const productWord = computed(() => productWordComputing(items.length));
+const productWord = computed<string>(() => productWordComputing(items.value.length));
 
-const formData = reactive({
+const formData = reactive<CheckoutData>({
   name: '',
   email: '',
   address: ''
 });
 
-function clearForm() {
+function clearForm(): void {
   formData.name = '';
   formData.email = '';
   formData.address = '';
   validator.value.$reset();
 }
 
-function navigateToBack() {
+function navigateToBack(): void {
   clearForm();
   router.back();
 }
@@ -116,7 +117,7 @@ const rules = {
 
 const validator = useVuelidate(rules, formData);
 
-async function handleSubmit() {
+async function handleSubmit(): Promise<void> {
   const isValid = await validator.value.$validate();
 
   if (!isValid) {

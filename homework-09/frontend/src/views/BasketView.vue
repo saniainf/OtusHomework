@@ -61,16 +61,16 @@ onMounted(() => {
   basket.fetchCart();
 });
 
-function clearBasket() {
+function clearBasket(): void {
   basket.clear();
   navigateToBack();
 }
 
-function navigateToBack() {
+function navigateToBack(): void {
   router.back();
 }
 
-function navigateToCheckout() {
+function navigateToCheckout(): void {
   router.push({ path: '/checkout' });
 }
 </script>

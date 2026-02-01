@@ -39,10 +39,11 @@
 <script setup lang="ts">
 import { onMounted, ref, computed, shallowRef, watch, nextTick } from 'vue';
 import { useRouter, useRoute } from 'vue-router';
-import { loadCategories, loadProducts, productWordComputing } from '../utils/utils.js';
+import { loadCategories, loadProducts, productWordComputing } from '../utils/utils.ts';
 import ProductCard from '../components/ProductCard.vue';
 import SearchPanel from '../components/SearchPanel.vue';
 import FilterPanel from '../components/FilterPanel.vue';
+import type { Product } from "../types/index.ts";
 
 const router = useRouter();
 const route = useRoute();
@@ -50,27 +51,27 @@ const route = useRoute();
 const LIMIT = 3; // Количество товаров за раз
 
 // Состояние загруженных товаров
-const allProducts = shallowRef([]); // Все загруженные товары
-const isLoading = ref(false);
-const error = ref(null);
-const categories = shallowRef([]);
+const allProducts = shallowRef<Product[]>([]); // Все загруженные товары
+const isLoading = ref<boolean>(false);
+const error = ref<string | null>(null);
+const categories = shallowRef<string[]>([]);
 
 // Состояние пагинации
-const currentOffset = ref(0);
-const totalProducts = ref(0);
-const hasMore = ref(false);
+const currentOffset = ref<number>(0);
+const totalProducts = ref<number>(0);
+const hasMore = ref<boolean>(false);
 
 // Фильтры
-const searchValue = ref('');
-const selectedCategory = ref('');
+const searchValue = ref<string>('');
+const selectedCategory = ref<string>('');
 
 // Флаг для восстановления состояния из URL
-const isRestoring = ref(true);
+const isRestoring = ref<boolean>(true);
 
 /**
  * Загружает товары с сервера с пагинацией и фильтрацией
  */
-async function loadMoreProducts() {
+async function loadMoreProducts(): Promise<void> {
   if (isLoading.value) return;
 
   isLoading.value = true;
@@ -90,7 +91,7 @@ async function loadMoreProducts() {
     totalProducts.value = data.total;
     hasMore.value = data.hasMore;
     currentOffset.value += LIMIT;
-  } catch (err) {
+  } catch (err: unknown) {
     console.error('Ошибка при загрузке товаров:', err);
     error.value = 'Не удалось загрузить товары';
   } finally {
@@ -101,7 +102,7 @@ async function loadMoreProducts() {
 /**
  * Загружает первую порцию товаров при изменении фильтров
  */
-async function resetAndLoadProducts() {
+async function resetAndLoadProducts(): Promise<void> {
   allProducts.value = [];
   currentOffset.value = 0;
   hasMore.value = false;
@@ -111,13 +112,13 @@ async function resetAndLoadProducts() {
 /**
  * Товары после фильтрации по поиску
  */
-const filteredProducts = computed(() => {
+const filteredProducts = computed<Product[]>(() => {
   if (!searchValue.value.trim()) {
     return allProducts.value;
   }
 
   const searchLower = searchValue.value.toLowerCase();
-  return allProducts.value.filter(product =>
+  return allProducts.value.filter((product: Product) =>
     product.title.toLowerCase().includes(searchLower)
   );
 });
@@ -125,19 +126,19 @@ const filteredProducts = computed(() => {
 /**
  * Склонение слова "товар"
  */
-const productWord = computed(() => productWordComputing(filteredProducts.value.length));
+const productWord = computed<string>(() => productWordComputing(filteredProducts.value.length));
 
 /**
  * Обновление параметров URL
  */
-function updateQueryParams() {
-  const query = {};
+function updateQueryParams(): void {
+  const query: Record<string, string> = {};
 
   if (searchValue.value) {
-    query.search = searchValue.value;
+    query['search'] = searchValue.value;
   }
   if (selectedCategory.value) {
-    query.category = selectedCategory.value;
+    query['category'] = selectedCategory.value;
   }
 
   router.replace({ query });
@@ -146,7 +147,7 @@ function updateQueryParams() {
 /**
  * Слежение за изменением фильтров
  */
-watch([searchValue, selectedCategory], (newValues, oldValues) => {
+watch([searchValue, selectedCategory], (newValues: [string, string], oldValues: [string, string]) => {
   // Пропускаем если восстанавливаем состояние из URL
   if (isRestoring.value) return;
 
@@ -163,10 +164,10 @@ watch([searchValue, selectedCategory], (newValues, oldValues) => {
  */
 onMounted(async () => {
   // Восстанавливаем фильтры из URL
-  if (route.query.search) {
+  if (route.query.search && typeof route.query.search === 'string') {
     searchValue.value = route.query.search;
   }
-  if (route.query.category) {
+  if (route.query.category && typeof route.query.category === 'string') {
     selectedCategory.value = route.query.category;
   }
 
