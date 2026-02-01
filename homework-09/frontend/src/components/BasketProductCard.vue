@@ -35,10 +35,8 @@ import type { CartItem, Product } from '../types/index.js';
 
 const router: Router = useRouter();
 
-// Определяем props: объект с полем `product` типа CartItem
 const { product } = defineProps<{ product: CartItem }>();
 
-// Определяем события с явной типизацией
 defineEmits<{
   /** Событие увеличения количества товара */
   increment: [product: Product];

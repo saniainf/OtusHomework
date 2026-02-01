@@ -22,39 +22,54 @@
 
 <script setup lang="ts">
 import { onMounted, ref } from 'vue';
+import type { Ref } from 'vue';
 import { useRouter } from 'vue-router';
-import { storeToRefs } from 'pinia';
+import type { Router } from 'vue-router';
 import { useAuthStore } from '../stores/authStore.js';
 import { useBasketStore } from '../stores/basketStore.js';
 import { login } from '../utils/utils.js';
+import type { LoginResponse } from '../types/index.js';
 
-const router = useRouter();
+const router: Router = useRouter();
 const authStore = useAuthStore();
 const basket = useBasketStore();
 
-const username = ref('');
-const password = ref('');
+// Поля формы входа
+const username: Ref<string> = ref<string>('');
+const password: Ref<string> = ref<string>('');
 
-function handleLogin() {
+/**
+ * Обрабатывает отправку формы входа.
+ * Отправляет учётные данные на сервер, сохраняет токен в auth store,
+ * инициализирует WebSocket соединение и загружает корзину пользователя.
+ */
+function handleLogin(): void {
   console.log('Логин:', username.value);
   console.log('Пароль:', password.value);
 
   login(username.value, password.value)
-    .then((response) => {
-      authStore.login(username.value, response.token);
-      // Инициализируем WebSocket с новым токеном для получения обновлений корзины
-      basket.initWebSocket(response.token);
-      // После успешного логина загружаем корзину пользователя с бэка
-      basket.fetchCart();
-      router.push({ path: '/' });
+    .then((response: LoginResponse | null): void => {
+      if (response) {
+        // Сохраняем логин и токен в auth store
+        authStore.login(username.value, response.token);
+        // Инициализируем WebSocket с новым токеном для получения обновлений корзины
+        basket.initWebSocket(response.token);
+        // После успешного логина загружаем корзину пользователя с бэка
+        basket.fetchCart();
+        // Перенаправляем на главную страницу
+        router.push({ path: '/' });
+      }
     })
-    .catch((error) => {
+    .catch((error: unknown): void => {
       console.error('Ошибка при входе:', error);
       alert('Ошибка при входе. Пожалуйста, проверьте ваши данные и попробуйте снова.');
     });
 }
 
-onMounted(() => {
+/**
+ * При загрузке компонента выводим тестовые данные для входа
+ */
+onMounted((): void => {
   console.log('Логин:', 'johnd');
   console.log('Пароль:', 'm38rmF$');
 });

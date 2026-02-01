@@ -12,24 +12,24 @@
 
 <script setup lang="ts">
 import { computed } from 'vue';
+import type { ComputedRef } from 'vue';
 
-const { categories, selectedCategory } = defineProps({
-  categories: {
-    type: Array,
-    required: true
-  },
-  selectedCategory: {
-    type: String,
-    default: ''
-  }
-});
+const { categories, selectedCategory } = defineProps<{
+  /** Список доступных категорий для фильтрации */
+  categories: string[];
+  /** Текущая выбранная категория */
+  selectedCategory: string;
+}>();
 
-const emit = defineEmits(['update:selectedCategory']);
+const emit = defineEmits<{
+  'update:selectedCategory': [value: string];
+}>();
 
-const localSelectedCategory = computed({
-  get: () => selectedCategory,
-  set: (val) => {
-    emit('update:selectedCategory', val)
+
+const localSelectedCategory: ComputedRef<string> = computed({
+  get: (): string => selectedCategory,
+  set: (val: string): void => {
+    emit('update:selectedCategory', val);
   }
 });
 </script>
